@@ -1,0 +1,6 @@
+---
+- name: Apply Foundation Configuration
+  hosts: all
+  become: true
+  roles:
+    - base
