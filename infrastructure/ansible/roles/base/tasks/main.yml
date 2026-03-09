@@ -49,8 +49,6 @@
           . ~/.bash_aliases
       fi
 
-      /etc/update-motd.d/10-basic-info
-
 - name: Install custom Figlet fonts
   block:
     - name: Clone figlet fonts repository
@@ -59,12 +57,34 @@
         dest: /tmp/figlet-fonts
         depth: 1
 
+    - name: Ensure system figlet directory exists with correct permissions
+      ansible.builtin.file:
+        path: /usr/share/figlet
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
     - name: Copy fonts to system directory
       ansible.builtin.copy:
         remote_src: true
         src: /tmp/figlet-fonts/
         dest: /usr/share/figlet/
+        owner: root
+        group: root
         mode: '0644'
+
+    - name: Ensure all subdirectories are accessible
+      ansible.builtin.file:
+        path: /usr/share/figlet
+        state: directory
+        recurse: yes
+        mode: '0755'
+
+    - name: Remove git metadata from system folder
+      ansible.builtin.file:
+        path: /usr/share/figlet/.git
+        state: absent
 
     - name: Rename fonts to remove spaces
       ansible.builtin.shell: |
@@ -75,13 +95,12 @@
         executable: /bin/bash
       changed_when: false
 
-    - name: Remove duplicate FIGlet fonts to clean up /usr/share/figlet
+    - name: Remove duplicate FIGlet fonts
       ansible.builtin.command:
-        cmd: fdupes -rdN . --exclude .git
+        cmd: fdupes -rdN .
         chdir: /usr/share/figlet
       register: fdupes_result
       changed_when: "'is a duplicate' in fdupes_result.stdout or fdupes_result.stdout != ''"
-      become: yes
 
   always:
     - name: Cleanup temporary font files
@@ -92,28 +111,78 @@
         - /tmp/figlet-fonts
         - /tmp/speedtest_install.sh
 
-- name: Disable static MOTD
-  ansible.builtin.copy:
-    content: ""
-    dest: /etc/motd
-    mode: '0644'
+- name: Manage MOTD Structure
+  block:
+    - name: Ensure MOTD directory exists
+      ansible.builtin.file:
+        path: /etc/update-motd.d
+        state: directory
+        mode: '0755'
 
-- name: Deploy dynamic MOTD script (10-basic-info)
+    - name: Remove old 10-uname script
+      ansible.builtin.file:
+        path: /etc/update-motd.d/10-uname
+        state: absent
+
+    - name: Disable static MOTD
+      ansible.builtin.copy:
+        content: ""
+        dest: /etc/motd
+        mode: '0644'
+
+    - name: Deploy dynamic MOTD script (10-basic-info)
+      ansible.builtin.copy:
+        dest: /etc/update-motd.d/10-basic-info
+        owner: root
+        group: root
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          SEPARATOR=$(printf -- '-%.0s' {1..30})
+          echo -e "\n\n"
+          fastfetch --pipe false
+          echo ""
+          echo $HOSTNAME | /usr/bin/figlet -f /usr/share/figlet/ANSI-Shadow.flf
+          echo $(whoami) | /usr/bin/figlet -f /usr/share/figlet/ANSI-Shadow.flf
+          echo ""
+          echo $SEPARATOR
+          date
+          echo $SEPARATOR
+          echo ""
+
+- name: Enable global MOTD trigger for all users
   ansible.builtin.copy:
-    dest: /etc/update-motd.d/10-basic-info
+    dest: /etc/profile.d/custom-motd.sh
     owner: root
     group: root
-    mode: '0755'
+    mode: '0644'
     content: |
-      #!/bin/bash
-      SEPARATOR=$(printf -- '-%.0s' {1..30})
-      echo -e "\n\n"
-      fastfetch --pipe false
-      echo ""
-      echo $HOSTNAME | /usr/bin/figlet -f /usr/share/figlet/ANSI-Shadow.flf
-      echo $(whoami) | /usr/bin/figlet -f /usr/share/figlet/ANSI-Shadow.flf
-      echo ""
-      echo $SEPARATOR
-      date
-      echo $SEPARATOR
-      echo ""
+      # Only run for interactive shells (prevents breaking scp/sftp)
+      if [[ $- == *i* ]]; then
+          if [ -x /etc/update-motd.d/10-basic-info ]; then
+              /etc/update-motd.d/10-basic-info
+          fi
+      fi
+
+- name: Ensure dietpi user has SSH access
+  ansible.builtin.authorized_key:
+    user: dietpi
+    state: present
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  become: yes
+
+- name: Harden SSH Configuration
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/99-hardening.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # Disable password-based login
+      PasswordAuthentication no
+      # Only allow root login via SSH keys
+      PermitRootLogin prohibit-password
+      # Ensure pubkey auth is on
+      PubkeyAuthentication yes
+  become: yes
+  notify: Restart SSH
