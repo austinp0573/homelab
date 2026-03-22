@@ -1,6 +1,6 @@
 # pve-01 
 
-- Dell Optiplex 7060 SFF - i5-8500 - 32GB RAM (2x16GB Dual Channel), 256 NVMe M.2 SSD
+- Dell Optiplex 7060 SFF - i5-8500 - 32GB RAM (2x16GB Dual Channel), 1TB SATA SSD
 
 ### BIOS
 

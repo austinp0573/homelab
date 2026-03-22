@@ -1,13 +1,13 @@
-# pve-02
+# pve-03
 
-- Dell Optiplex 7080 Mini - i5-10600 - 16GB RAM (2x8GB Dual Channel), 1TB SATA SSD
+- HP EliteDesk G4 DM - i7-8700T - 16GB RAM (2x8GB Dual Channel), 512GB NVMe M.2 SSD
 
 ### BIOS
 
 - Integrated NIC: Enabled
 - Secure Boot: Disabled
 - Virtualization Support: All Enabled
-- AC Recovery: Last State
+- AC Recovery: Power Off
 - Wake on LAN: Enabled
 
 ### Proxmox Install
@@ -15,11 +15,12 @@
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
 | **Filesystem** | `ext4` | Standard, rock-solid stability for the OS root partition. |
-| **hdsize** | `953` | (Approx) Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
-| **swapsize** | `16` | Matches standard RAM for an Optiplex; provides a safety net for OOM events. |
-| **maxroot** | `60` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
-| **maxvz** | `0` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
-| **minfree** | `95` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
+| **hdsize** | `465GB` | (Approx) Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
+| **swapsize** | `8GB` | Matches standard RAM for an Optiplex; provides a safety net for OOM events. |
+| **maxroot** | `60GB` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
+| **minfree** | `46GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
+| **maxvz** | `0GB` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
+
 
 
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
@@ -28,12 +29,20 @@
 ### Network configuration
 
 3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `pve-02.management.tusko.org` 
-* **IP Address:** `10.0.10.5/24` (Management VLAN)
+* **Hostname:** `pve-03.mgmt.tusko.org` 
+* **IP Address:** `10.0.10.6/24` (Management VLAN)
 * **Gateway:** `10.0.10.1` (pfSense)
 * **DNS:** `10.0.10.1` (pfSense)
 
 ## Post Install
+
+**Enable added Intel i226v NIC**
+
+- Select pve-03
+- Network Tab
+- NIC0 -> Edit
+- Check `AutoStart`
+- `Apply Configuration`
 
 **Enable VLAN Support**
 
