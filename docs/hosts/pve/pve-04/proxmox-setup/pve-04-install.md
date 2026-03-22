@@ -1,13 +1,13 @@
-# pve-02
+# pve-04
 
-- Dell Optiplex 7080 Mini - i5-10600 - 16GB RAM (2x8GB Dual Channel), 1TB SATA SSD
+- HP EliteDesk G6 DM - i5-10500T - 32GB RAM (2x16GB Dual Channel), 1TB NVMe M.2 SSD
 
 ### BIOS
 
 - Integrated NIC: Enabled
 - Secure Boot: Disabled
 - Virtualization Support: All Enabled
-- AC Recovery: Last State
+- AC Recovery: Power Off
 - Wake on LAN: Enabled
 
 ### Proxmox Install
@@ -15,11 +15,12 @@
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
 | **Filesystem** | `ext4` | Standard, rock-solid stability for the OS root partition. |
-| **hdsize** | `953` | (Approx) Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
-| **swapsize** | `16` | Matches standard RAM for an Optiplex; provides a safety net for OOM events. |
-| **maxroot** | `60` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
-| **maxvz** | `0` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
-| **minfree** | `95` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
+| **hdsize** | `931GB` | Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
+| **swapsize** | `16GB` | Large drive, and large RAM; provides a safety net for OOM events. |
+| **maxroot** | `80GB` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
+| **minfree** | `93GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
+| **maxvz** | `0GB` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
+
 
 
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
@@ -28,12 +29,20 @@
 ### Network configuration
 
 3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `${PVE02_HOSTNAME}` 
-* **IP Address:** `${PVE02_IP}` (management network)
+* **Hostname:** `${PVE04_HOSTNAME}` 
+* **IP Address:** `${PVE04_IP}` (management network)
 * **Gateway:** `${PVE_GATEWAY_OR_DNS}` (gateway)
 * **DNS:** `${PVE_GATEWAY_OR_DNS}` (gateway)
 
 ## Post Install
+
+**Enable added Intel i226v NIC**
+
+- Select pve-04
+- Network Tab
+- NIC0 -> Edit
+- Check `AutoStart`
+- `Apply Configuration`
 
 **Enable VLAN Support**
 
