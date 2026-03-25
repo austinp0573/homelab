@@ -7,7 +7,7 @@
 - Integrated NIC: Enabled
 - Secure Boot: Disabled
 - Virtualization Support: All Enabled
-- AC Recovery: Last State
+- AC Recovery: Power-Off
 - Wake on LAN: Enabled
 
 ### Proxmox Install
@@ -15,11 +15,11 @@
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
 | **Filesystem** | `ext4` | Standard for single-drive consumer nodes; lower overhead than XFS. |
-| **hdsize** | `238` | Total usable capacity (256GB decimal $\approx$ 238 GiB). |
+| **hdsize** | `931` | Total usable capacity (1000GB decimal $\approx$ 931 GiB). |
 | **swapsize** | `16` | 32GB of RAM on the host, smaller could cause OOM issues |
-| **maxroot** | `50` | 50GB is the "sweet spot" for Proxmox OS, updates, and small log files. |
+| **maxroot** | `80` | 50GB is the "sweet spot" for Proxmox OS, updates, and small log files. |
 | **maxvz** | `0` | **Mandatory.** Prevents the creation of `/var/lib/pve/local-vzdump`, forcing LVM-Thin. |
-| **minfree** | `24` | Reserves ~10% of the disk. Essential for LVM metadata and drive health. |
+| **minfree** | `93` | Reserves ~10% of the disk. Essential for LVM metadata and drive health. |
 
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
 * **Gotcha:** If you ignore `maxvz=0`, the installer creates a standard directory on the root partition for backups. On a 1TB drive, this often results in a massive OS partition and a tiny, useless Thin Pool.

@@ -28,7 +28,7 @@
 ### Network configuration
 
 3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `pve-02.management.tusko.org` 
+* **Hostname:** `pve-02.mgmt.tusko.org` 
 * **IP Address:** `10.0.10.5/24` (Management VLAN)
 * **Gateway:** `10.0.10.1` (pfSense)
 * **DNS:** `10.0.10.1` (pfSense)

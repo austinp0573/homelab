@@ -1,13 +1,13 @@
 # pve-05
 
-- Dell Optiplex 7080 Mini - i5-10600 - 16GB RAM (2x8GB Dual Channel), 1TB SATA SSD
+- Qiyida X99 Motherboard - E5-2680v4 - 64GB RAM (4x16GB Dual Channel), 2TB NVMe M.2 SSD
 
 ### BIOS
 
 - Integrated NIC: Enabled
 - Secure Boot: Disabled
 - Virtualization Support: All Enabled
-- AC Recovery: Last State
+- AC Recovery: Power Off
 - Wake on LAN: Enabled
 
 ### Proxmox Install
@@ -15,11 +15,12 @@
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
 | **Filesystem** | `ext4` | Standard, rock-solid stability for the OS root partition. |
-| **hdsize** | `931` | (Approx) Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
-| **swapsize** | `16` | Matches standard RAM for an Optiplex; provides a safety net for OOM events. |
-| **maxroot** | `80` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
-| **maxvz** | `0` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
-| **minfree** | `93` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
+| **hdsize** | `953GB` | (Approx) Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
+| **swapsize** | `16GB` | Matches standard RAM for an Optiplex; provides a safety net for OOM events. |
+| **maxroot** | `60GB` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
+| **minfree** | `180GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
+| **maxvz** | `0GB` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
+
 
 
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
@@ -28,8 +29,8 @@
 ### Network configuration
 
 3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `pve-05.mgmt.tusko.org` 
-* **IP Address:** `10.0.10.8/24` (Management VLAN)
+* **Hostname:** `pve-04.mgmt.tusko.org` 
+* **IP Address:** `10.0.10.9/24` (Management VLAN)
 * **Gateway:** `10.0.10.1` (pfSense)
 * **DNS:** `10.0.10.1` (pfSense)
 
@@ -37,11 +38,18 @@
 
 **Enable added Intel i226v NIC**
 
-- Select pve-02
+- Select pve-05
 - Network Tab
 - NIC0 -> Edit
 - Check `AutoStart`
 - `Apply Configuration`
+
+**Enable VLAN Support**
+
+- `apt install vim-nox`
+- `vim /etc/network/interfaces`
+- add `bridge-vlan-aware yes` block at the end of the `vmbr0` block
+- to apply changes without a reboot run: `ifreload -a`
 
 **Proxmox VE Helper Script Post Install**
 
@@ -59,15 +67,6 @@ run it in the PVE shell.
 - don't enable test
 - don't update/upgrade -> run `apt update && apt full-upgrade -y` after the script is done
 - reboot
-
-**Enable VLAN Support**
-
-- `apt install vim-nox`
-- `vim /etc/network/interfaces`
-- add `bridge-vlan-aware yes` block at the end of the `vmbr0` block
-- to apply changes without a reboot run: `ifreload -a`
-
-
 
 **Add Admin User**
 
@@ -87,8 +86,3 @@ run it in the PVE shell.
 - add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>` 
 - run `ssh-keygen -R <pve-DNS or IP>` to move to known_hosts.old if this is a reinstall)
 - connect via SSH
-
-## M.2 to Intel i226-V Adapter issue
-
-- as described [here](https://www.dell.com/community/en/conversations/optiplex-desktops/25gb-lan-card-in-wifi-slot-optiplex-7080/67374109520b7c11ac4cfce0) OptiPlex 7080s don't play nice with M.2 to Ethernet adapters. I was trying to use a B + M key adapter in the M.2 NVMe SSD slot and it was only ever recognized in the Mikrotik switch at 10Mbps. All of the other PCs running the same adapter auto-negotiated with zero issues. 
-- Returned the B + M Key adpater and ordered an A + E Key adapter. Hopefully that solves the problem.
