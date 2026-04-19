@@ -1,0 +1,30 @@
+# sbc-01
+
+- FriendlyElec - NanoPi Zero 2
+    - CPU:
+        - Rockchip RK3528A
+            - Cores: Quad-core ARM Cortex-A53
+            - Frequency: Up to 1.8 GHz
+    - GPU:
+        - ARM Mali-450
+        - VPU: 4K H.265 / H.264 60fps decoding
+    - RAM:
+        - 2GB LPDDR4X
+    - Storage:
+        - 64GB eMMC (onboard)
+        - MicroSD: 64GB (Amazon Basics Micro SD)
+    - Network:
+        - Ethernet: 1Gbps (Realtek RTL8211F)
+        - WiFi: M.2 E-Key slot (PCIe 2.1 x1, supports M.2 WiFi modules)
+    - USB:
+        - 1x USB 2.0 Type-A (Host)
+        - 1x USB-C (USB 2.0 Device — for eMMC upgrade)
+    - GPIO:
+        - 30-pin FPC connector
+        - Serial debug: 2.54mm 3-pin header, 3.3V TTL, 1500000 bps
+    - Misc:
+        - RTC: HYM8563TS — custom CR1225 battery (connector + heatshrink)
+        - LEDs: SYS (Red), LED1 (Green)
+        - Buttons: RESET, RECOVERY, MASK (eMMC upgrade)
+    - Operating Temperature: 0°C to 80°C
+    - Power: DC 5V/2A via USB-C or 2.54mm header

@@ -1,16 +1,6 @@
-# pve-04
+# pve-04 — Proxmox Install
 
-- HP EliteDesk G6 DM - i5-10500T - 32GB RAM (2x16GB Dual Channel), 1TB NVMe M.2 SSD
-
-### BIOS
-
-- Integrated NIC: Enabled
-- Secure Boot: Disabled
-- Virtualization Support: All Enabled
-- AC Recovery: Power Off
-- Wake on LAN: Enabled
-
-### Proxmox Install
+## Proxmox Install
 
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
@@ -21,22 +11,20 @@
 | **minfree** | `93GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
 | **maxvz** | `0GB` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
 
-
-
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
 * **Gotcha:** If you ignore `maxvz=0`, the installer creates a standard directory on the root partition for backups. On a 1TB drive, this often results in a massive OS partition and a tiny, useless Thin Pool.
 
-### Network configuration
+## Network Configuration
 
-3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `pve-04.mgmt.tusko.org` 
+* **Management Interface:** Onboard Intel 1Gbps NIC
+* **Hostname:** `pve-04.mgmt.tusko.org`
 * **IP Address:** `10.0.10.7/24` (Management VLAN)
 * **Gateway:** `10.0.10.1` (pfSense)
 * **DNS:** `10.0.10.1` (pfSense)
 
 ## Post Install
 
-**Enable added Intel i226v NIC**
+**Enable Added Intel i226v NIC**
 
 - Select pve-04
 - Network Tab
@@ -53,7 +41,7 @@
 
 **Proxmox VE Helper Script Post Install**
 
-After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization) 
+After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization)
 
 where you will find the following command:
 
@@ -83,6 +71,6 @@ run it in the PVE shell.
 
 **Add SSH Key**
 
-- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>` 
+- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>`
 - run `ssh-keygen -R <pve-DNS or IP>` to move to known_hosts.old if this is a reinstall)
 - connect via SSH

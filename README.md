@@ -1,5 +1,9 @@
  
  # Homelab
+
+ <p align="center">
+  <img src="./docs/hosts/pics/lab_cluster0.webp" width="350" alt="Project Header">
+</p>
  
  This repository contains configuration, documentation, and automation for managing my homelab.
  

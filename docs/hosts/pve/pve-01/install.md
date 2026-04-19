@@ -1,48 +1,28 @@
-# pve-05
+# pve-01 — Proxmox Install
 
-- Qiyida X99 Motherboard - E5-2680v4 - 64GB RAM (4x16GB Dual Channel), 2TB NVMe M.2 SSD
-
-### BIOS
-
-- Integrated NIC: Enabled
-- Secure Boot: Disabled
-- Virtualization Support: All Enabled
-- AC Recovery: Power Off
-- Wake on LAN: Enabled
-
-### Proxmox Install
+## Proxmox Install
 
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
-| **Filesystem** | `ext4` | Standard, rock-solid stability for the OS root partition. |
-| **hdsize** | `953GB` | (Approx) Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
-| **swapsize** | `16GB` | Matches standard RAM for an Optiplex; provides a safety net for OOM events. |
-| **maxroot** | `60GB` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
-| **minfree** | `180GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
-| **maxvz** | `0GB` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
-
-
+| **Filesystem** | `ext4` | Standard for single-drive consumer nodes; lower overhead than XFS. |
+| **hdsize** | `931` | Total usable capacity (1000GB decimal $\approx$ 931 GiB). |
+| **swapsize** | `16` | 32GB of RAM on the host, smaller could cause OOM issues |
+| **maxroot** | `80` | 50GB is the "sweet spot" for Proxmox OS, updates, and small log files. |
+| **maxvz** | `0` | **Mandatory.** Prevents the creation of `/var/lib/pve/local-vzdump`, forcing LVM-Thin. |
+| **minfree** | `93` | Reserves ~10% of the disk. Essential for LVM metadata and drive health. |
 
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
 * **Gotcha:** If you ignore `maxvz=0`, the installer creates a standard directory on the root partition for backups. On a 1TB drive, this often results in a massive OS partition and a tiny, useless Thin Pool.
 
-### Network configuration
+## Network Configuration
 
-3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `pve-04.mgmt.tusko.org` 
-* **IP Address:** `10.0.10.9/24` (Management VLAN)
+* **Management Interface:** Onboard Intel 1Gbps NIC
+* **Hostname:** `pve-01.management.tusko.org`
+* **IP Address:** `10.0.10.4/24` (Management VLAN)
 * **Gateway:** `10.0.10.1` (pfSense)
 * **DNS:** `10.0.10.1` (pfSense)
 
 ## Post Install
-
-**Enable added Intel i226v NIC**
-
-- Select pve-05
-- Network Tab
-- NIC0 -> Edit
-- Check `AutoStart`
-- `Apply Configuration`
 
 **Enable VLAN Support**
 
@@ -53,7 +33,7 @@
 
 **Proxmox VE Helper Script Post Install**
 
-After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization) 
+After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization)
 
 where you will find the following command:
 
@@ -83,6 +63,6 @@ run it in the PVE shell.
 
 **Add SSH Key**
 
-- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>` 
+- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>`
 - run `ssh-keygen -R <pve-DNS or IP>` to move to known_hosts.old if this is a reinstall)
 - connect via SSH
