@@ -1,16 +1,6 @@
-# pve-02
+# pve-05 — Proxmox Install
 
-- Dell Optiplex 7080 Mini - i5-10600 - 16GB RAM (2x8GB Dual Channel), 1TB NVMe M.2 SSD
-
-### BIOS
-
-- Integrated NIC: Enabled
-- Secure Boot: Disabled
-- Virtualization Support: All Enabled
-- AC Recovery: Last State
-- Wake on LAN: Enabled
-
-### Proxmox Install
+## Proxmox Install
 
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
@@ -21,23 +11,22 @@
 | **maxvz** | `0` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
 | **minfree** | `93` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
 
-
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
 * **Gotcha:** If you ignore `maxvz=0`, the installer creates a standard directory on the root partition for backups. On a 1TB drive, this often results in a massive OS partition and a tiny, useless Thin Pool.
 
-### Network configuration
+## Network Configuration
 
-3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `${PVE02_HOSTNAME}` 
-* **IP Address:** `${PVE02_IP}` (management network)
+* **Management Interface:** Onboard Intel 1Gbps NIC
+* **Hostname:** `${PVE05_HOSTNAME}`
+* **IP Address:** `${PVE05_IP}` (management network)
 * **Gateway:** `${PVE_GATEWAY_OR_DNS}` (gateway)
 * **DNS:** `${PVE_GATEWAY_OR_DNS}` (gateway)
 
 ## Post Install
 
-**Enable added Intel i226v NIC**
+**Enable Added Intel i226v NIC**
 
-- Select pve-02
+- Select pve-05
 - Network Tab
 - NIC0 -> Edit
 - Check `AutoStart`
@@ -45,7 +34,7 @@
 
 **Proxmox VE Helper Script Post Install**
 
-After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization) 
+After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization)
 
 where you will find the following command:
 
@@ -67,8 +56,6 @@ run it in the PVE shell.
 - add `bridge-vlan-aware yes` block at the end of the `vmbr0` block
 - to apply changes without a reboot run: `ifreload -a`
 
-
-
 **Add Admin User**
 
 - `adduser <user-name>`
@@ -84,11 +71,6 @@ run it in the PVE shell.
 
 **Add SSH Key**
 
-- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>` 
+- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>`
 - run `ssh-keygen -R <pve-DNS or IP>` to move to known_hosts.old if this is a reinstall)
 - connect via SSH
-
-## M.2 to Intel i226-V Adapter issue
-
-- as described [here](https://www.dell.com/community/en/conversations/optiplex-desktops/25gb-lan-card-in-wifi-slot-optiplex-7080/67374109520b7c11ac4cfce0) OptiPlex 7080s don't play nice with M.2 to Ethernet adapters. I was trying to use a B + M key adapter in the M.2 NVMe SSD slot and it was only ever recognized in the Mikrotik switch at 10Mbps. All of the other PCs running the same adapter auto-negotiated with zero issues. 
-- Returned the B + M Key adpater and ordered an A + E Key adapter. Hopefully that solves the problem.

@@ -1,44 +1,32 @@
-# pve-03
+# pve-04 — Proxmox Install
 
-- HP EliteDesk G4 DM - i7-8700T - 16GB RAM (2x8GB Dual Channel), 512GB NVMe M.2 SSD
-
-### BIOS
-
-- Integrated NIC: Enabled
-- Secure Boot: Disabled
-- Virtualization Support: All Enabled
-- AC Recovery: Power Off
-- Wake on LAN: Enabled
-
-### Proxmox Install
+## Proxmox Install
 
 | Parameter | Value | Thoughts |
 | --- | --- | --- |
 | **Filesystem** | `ext4` | Standard, rock-solid stability for the OS root partition. |
-| **hdsize** | `465GB` | (Approx) Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
-| **swapsize** | `8GB` | Matches standard RAM for an Optiplex; provides a safety net for OOM events. |
-| **maxroot** | `60GB` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
-| **minfree** | `46GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
+| **hdsize** | `931GB` | Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
+| **swapsize** | `16GB` | Large drive, and large RAM; provides a safety net for OOM events. |
+| **maxroot** | `80GB` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
+| **minfree** | `93GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
 | **maxvz** | `0GB` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
-
-
 
 * **Relationship:** The `data` pool is a "thin" container. If you allocate 500GB to a VM but only install 10GB of software, only 10GB is subtracted from the pool's physical capacity.
 * **Gotcha:** If you ignore `maxvz=0`, the installer creates a standard directory on the root partition for backups. On a 1TB drive, this often results in a massive OS partition and a tiny, useless Thin Pool.
 
-### Network configuration
+## Network Configuration
 
-3. **Management Interface:** Onboard Intel 1Gbps NIC
-* **Hostname:** `${PVE03_HOSTNAME}` 
-* **IP Address:** `${PVE03_IP}` (management network)
+* **Management Interface:** Onboard Intel 1Gbps NIC
+* **Hostname:** `${PVE04_HOSTNAME}`
+* **IP Address:** `${PVE04_IP}` (management network)
 * **Gateway:** `${PVE_GATEWAY_OR_DNS}` (gateway)
 * **DNS:** `${PVE_GATEWAY_OR_DNS}` (gateway)
 
 ## Post Install
 
-**Enable added Intel i226v NIC**
+**Enable Added Intel i226v NIC**
 
-- Select pve-03
+- Select pve-04
 - Network Tab
 - NIC0 -> Edit
 - Check `AutoStart`
@@ -53,7 +41,7 @@
 
 **Proxmox VE Helper Script Post Install**
 
-After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization) 
+After install go to the [pve helper scripts post install page](https://community-scripts.github.io/ProxmoxVE/scripts?id=post-pve-install&category=Proxmox+%26+Virtualization)
 
 where you will find the following command:
 
@@ -83,6 +71,6 @@ run it in the PVE shell.
 
 **Add SSH Key**
 
-- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>` 
+- add ssh key (`ssh-copy-id -i ~/.ssh/<key to use> <pve-user>@<pve-DNS or IP>`
 - run `ssh-keygen -R <pve-DNS or IP>` to move to known_hosts.old if this is a reinstall)
 - connect via SSH
