@@ -1,0 +1,5 @@
+- name: Apply base role to target hosts
+  hosts: sbc-01
+  become: yes
+  roles:
+    - base

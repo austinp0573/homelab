@@ -1,5 +1,0 @@
----
-ansible_user: root
-ansible_python_interpreter: /usr/bin/python3
-# Add SSH private key path if it's not the default
-# ansible_ssh_private_key_file: ~/.ssh/id_rsa

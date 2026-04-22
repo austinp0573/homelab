@@ -1,0 +1,98 @@
+---
+- name: Install sudo
+  ansible.builtin.apt:
+    name: sudo
+    state: present
+    update_cache: yes
+  become: yes
+  ignore_errors: yes 
+
+- name: Create 'ansible' group
+  ansible.builtin.group:
+    name: ansible
+    state: present
+  become: yes
+
+- name: Create 'austin' group
+  ansible.builtin.group:
+    name: austin
+    state: present
+  become: yes
+
+- name: Create 'ansible' user
+  ansible.builtin.user:
+    name: ansible
+    group: ansible
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+    state: present
+  become: yes
+
+- name: Create 'austin' user
+  ansible.builtin.user:
+    name: austin
+    group: austin
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+    state: present
+    password: " {{ austin_user_password }}"
+  become: yes
+
+- name: Ensure .ssh directory exists for the ansible user
+  ansible.builtin.file:
+    path: /home/ansible/.ssh
+    state: directory
+    owner: ansible
+    group: ansible
+    mode: '0700'
+  become: yes
+
+- name: Ensure .ssh directory exists for the 'austin' user
+  ansible.builtin.file:
+    path: /home/austin/.ssh
+    state: directory
+    owner: austin
+    group: austin
+    mode: '0700'
+  become: yes
+
+- name: Add SSH key to 'ansible' user's authorized_keys
+  ansible.builtin.authorized_key:
+    user: ansible
+    state: present
+    key: "{{ ansible_user_ssh_pub_key }}"
+  become: yes
+
+- name: Add SSH key to 'austin' user's authorized_keys
+  ansible.builtin.authorized_key:
+    user: austin
+    state: present
+    key: "{{ austin_user_ssh_pub_key }}"
+  become: yes
+
+
+- name: Allow 'ansible' user to have passwordless sudo
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/ansible
+    content: "ansible ALL=(ALL) NOPASSWD: ALL\n"
+    mode: '0440'
+    validate: '/usr/sbin/visudo -cf %s'
+  become: yes
+
+- name: Configure SSH Daemon to disable Root Login and Password Auth
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/99-ansible-hardening.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # Ansible Hardening Rules
+      PasswordAuthentication no
+      PermitRootLogin prohibit-password
+      PubkeyAuthentication yes
+  become: yes
+  notify: Restart SSH

@@ -4,3 +4,15 @@
   become: true
   roles:
     - base
+
+- name: Configure NUT Servers
+  hosts: "*_servers"
+  become: true
+  roles:
+    - nut_server
+
+- name: Configure NUT Clients
+  hosts: "*_clients"
+  become: true
+  roles:
+    - nut_client

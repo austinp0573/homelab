@@ -4,3 +4,13 @@ pve-01-backup/
 traefik_setup/
 services/rackpeek/data/config.yaml
 .history/
+**/*.env
+vault.yaml
+power*
+docker/
+nut_client/
+nut_server/
+security/
+update/
+deploy_*.yml
+run_*.yml

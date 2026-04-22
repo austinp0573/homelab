@@ -1,0 +1,19 @@
+---
+# This playbook should be run ONCE against a new server to bootstrap it.
+# Usage: 
+# ansible-playbook -i inventory/hosts.yml bootstrap.yml -u root --ask-pass
+# OR if you are connecting with an existing user like 'ubuntu' with sudo:
+# ansible-playbook -i inventory/hosts.yml bootstrap.yml -u ubuntu -K
+
+- name: Bootstrap Ansible Service Account
+  hosts: all
+  gather_facts: no # Don't gather facts because python might not be installed yet
+  pre_tasks:
+    - name: Ensure python3 is installed for Ansible
+      raw: test -e /usr/bin/python3 || (apt -y update && apt install -y python3)
+      become: yes
+      changed_when: false
+    - name: Gather Facts
+      setup:
+  roles:
+    - bootstrap

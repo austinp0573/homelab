@@ -163,26 +163,3 @@
               /etc/update-motd.d/10-basic-info
           fi
       fi
-
-- name: Ensure dietpi user has SSH access
-  ansible.builtin.authorized_key:
-    user: dietpi
-    state: present
-    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-  become: yes
-
-- name: Harden SSH Configuration
-  ansible.builtin.copy:
-    dest: /etc/ssh/sshd_config.d/99-hardening.conf
-    owner: root
-    group: root
-    mode: '0644'
-    content: |
-      # Disable password-based login
-      PasswordAuthentication no
-      # Only allow root login via SSH keys
-      PermitRootLogin prohibit-password
-      # Ensure pubkey auth is on
-      PubkeyAuthentication yes
-  become: yes
-  notify: Restart SSH
