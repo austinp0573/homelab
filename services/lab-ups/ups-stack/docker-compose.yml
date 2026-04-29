@@ -1,0 +1,193 @@
+name: ups-stack
+
+services:
+  nutify:
+    build:
+      context: ./nutify
+      dockerfile: Dockerfile
+    image: homelab-nutify:latest
+    container_name: nutify
+    restart: unless-stopped
+    privileged: true
+    pid: host
+    user: root
+    cap_add:
+      - SYS_ADMIN
+      - SYS_RAWIO
+      - MKNOD
+    devices:
+      - /dev/bus/usb:/dev/bus/usb:rwm
+    device_cgroup_rules:
+      - "c 189:* rwm"
+    environment:
+      UPS_NAME: ${UPS_NAME}
+      UPS_DRIVER: ${UPS_DRIVER}
+      UPS_PORT: ${UPS_PORT:-auto}
+      UPS_VENDOR_ID: ${UPS_VENDOR_ID}
+      UPS_PRODUCT_ID: ${UPS_PRODUCT_ID}
+      UPS_PRODUCT_STRING: ${UPS_PRODUCT_STRING}
+      UPS_SERIAL: ${UPS_SERIAL}
+      UPS_VENDOR_NAME: ${UPS_VENDOR_NAME}
+      UPS_INPUT_SENSITIVITY: ${UPS_INPUT_SENSITIVITY:-}
+      UPS_DEVICE_MODEL: ${UPS_DEVICE_MODEL:-}
+      UPS_BATTERY_TYPE: ${UPS_BATTERY_TYPE:-}
+      UPS_BATTERY_DATE: ${UPS_BATTERY_DATE:-}
+      UPS_BATTERY_MFR_DATE: ${UPS_BATTERY_MFR_DATE:-}
+      NUT_MON_USER: ${NUT_MON_USER}
+      NUT_MON_PASSWORD: ${NUT_MON_PASSWORD}
+      NUT_PRIMARY_USER: ${NUT_PRIMARY_USER:-primarymon}
+      NUT_PRIMARY_PASSWORD: ${NUT_PRIMARY_PASSWORD}
+      NUT_ADMIN_USER: ${NUT_ADMIN_USER:-admin}
+      NUT_ADMIN_PASSWORD: ${NUT_ADMIN_PASSWORD}
+      NUTIFY_SERVER_NAME: ${NUTIFY_SERVER_NAME:-nutify}
+      NUTIFY_ADMIN_USER: ${NUTIFY_ADMIN_USER:-admin}
+      NUTIFY_ADMIN_PASSWORD: ${NUTIFY_ADMIN_PASSWORD}
+      NUTIFY_CONFIG_UID: ${NUTIFY_CONFIG_UID:-1000}
+      NUTIFY_CONFIG_GID: ${NUTIFY_CONFIG_GID:-1000}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_WERKZEUG: ${LOG_WERKZEUG:-true}
+      ENABLE_LOG_STARTUP: ${ENABLE_LOG_STARTUP:-Y}
+      SSL_ENABLED: ${SSL_ENABLED:-false}
+      SECRET_KEY: ${NUTIFY_SECRET_KEY}
+      UDEV: "1"
+      LOG: "true"
+    volumes:
+      - ./nutify-data/etc/nut:/etc/nut
+      - ./nutify-data/instance:/app/nutify/instance
+      - ./nutify-data/logs:/app/nutify/logs
+      - ./nutify-data/ssl:/app/ssl
+      - /run/udev:/run/udev:ro
+      - nut-flags:/var/run/nut-flags
+    ports:
+      - "0.0.0.0:3493:3493"
+      - "${NUTIFY_WEB_PORT:-5050}:5050"
+    networks:
+      - ups-net
+
+  upsnap:
+    image: ${UPSNAP_IMAGE:-ghcr.io/seriousm4x/upsnap:5}
+    container_name: upsnap
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      upsnap-ssh-init:
+        condition: service_completed_successfully
+    cap_add:
+      - NET_RAW
+    cap_drop:
+      - ALL
+    environment:
+      TZ: ${TZ:-America/Chicago}
+      UPSNAP_HTTP_LISTEN: 0.0.0.0:${UPSNAP_PORT:-8090}
+      UPSNAP_INTERVAL: ${UPSNAP_INTERVAL:-*/10 * * * * *}
+      UPSNAP_SCAN_RANGE: ${UPSNAP_SCAN_RANGE:-}
+      UPSNAP_SCAN_TIMEOUT: ${UPSNAP_SCAN_TIMEOUT:-500ms}
+      UPSNAP_PING_PRIVILEGED: ${UPSNAP_PING_PRIVILEGED:-true}
+      UPSNAP_WEBSITE_TITLE: ${UPSNAP_WEBSITE_TITLE:-UPS Wake}
+    volumes:
+      - upsnap-data:/app/pb_data
+      - ./upsnap-data/ssh:/app/ssh
+
+  upsnap-ssh-init:
+    image: alpine:3.20
+    container_name: upsnap-ssh-init
+    restart: "no"
+    environment:
+      UPSNAP_SSH_PRIVATE_KEY_B64: ${UPSNAP_SSH_PRIVATE_KEY_B64:-}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        mkdir -p /app/ssh
+        chmod 700 /app/ssh
+        if [ -n "$${UPSNAP_SSH_PRIVATE_KEY_B64:-}" ]; then
+          printf '%s' "$${UPSNAP_SSH_PRIVATE_KEY_B64}" | base64 -d > /app/ssh/id_ed25519
+          chmod 600 /app/ssh/id_ed25519
+          echo "[upsnap-ssh-init] Wrote /app/ssh/id_ed25519"
+        else
+          echo "[upsnap-ssh-init] UPSNAP_SSH_PRIVATE_KEY_B64 is empty; no key written"
+        fi
+        touch /app/ssh/known_hosts
+        chmod 600 /app/ssh/known_hosts
+    volumes:
+      - ./upsnap-data/ssh:/app/ssh
+
+  upsnap-init:
+    build:
+      context: ./upsnap-init
+      dockerfile: Dockerfile
+    image: homelab-upsnap-init:latest
+    container_name: upsnap-init
+    restart: "no"
+    depends_on:
+      - upsnap
+    environment:
+      UPSNAP_URL: http://host-gateway:${UPSNAP_PORT:-8090}
+      UPSNAP_ADMIN_EMAIL: ${UPSNAP_ADMIN_EMAIL}
+      UPSNAP_ADMIN_PASSWORD: ${UPSNAP_ADMIN_PASSWORD}
+      UPSNAP_HOSTS_JSON: ${UPSNAP_HOSTS_JSON:-}
+      UPSNAP_SSH_USER: ${UPSNAP_SSH_USER:-upsnap-shutdown}
+      UPSNAP_SSH_KEY_PATH: ${UPSNAP_SSH_KEY_PATH:-/app/ssh/id_ed25519}
+      UPSNAP_SSH_OPTIONS: ${UPSNAP_SSH_OPTIONS:--o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/app/ssh/known_hosts}
+      UPSNAP_DEFAULT_SHUTDOWN_COMMAND: ${UPSNAP_DEFAULT_SHUTDOWN_COMMAND:-sudo /sbin/shutdown -h now}
+      UPSNAP_DEFAULT_SHUTDOWN_TIMEOUT: ${UPSNAP_DEFAULT_SHUTDOWN_TIMEOUT:-120}
+      UPSNAP_INIT_TIMEOUT: ${UPSNAP_INIT_TIMEOUT:-120}
+      UPSNAP_INIT_SKIP: ${UPSNAP_INIT_SKIP:-false}
+    volumes:
+      - ./upsnap-data/ssh:/app/ssh:ro
+    extra_hosts:
+      - "host-gateway:host-gateway"
+    networks:
+      - ups-net
+
+  nut-watcher:
+    build:
+      context: ./nut-watcher
+      dockerfile: Dockerfile
+    image: homelab-nut-watcher:latest
+    container_name: nut-watcher
+    restart: unless-stopped
+    privileged: true
+    pid: host
+    depends_on:
+      - nutify
+      - upsnap
+    environment:
+      UPS_NAME: ${UPS_NAME}
+      NUT_HOST: nutify
+      NUT_PORT: "3493"
+      NUT_MON_USER: ${NUT_MON_USER}
+      NUT_MON_PASSWORD: ${NUT_MON_PASSWORD}
+      SHUTDOWN_BATTERY_THRESHOLD: ${SHUTDOWN_BATTERY_THRESHOLD}
+      SHUTDOWN_TIME_ON_BATTERY: ${SHUTDOWN_TIME_ON_BATTERY}
+      WAKEUP_BATTERY_THRESHOLD: ${WAKEUP_BATTERY_THRESHOLD}
+      UPSNAP_URL: http://host-gateway:${UPSNAP_PORT:-8090}
+      UPSNAP_ADMIN_EMAIL: ${UPSNAP_ADMIN_EMAIL}
+      UPSNAP_ADMIN_PASSWORD: ${UPSNAP_ADMIN_PASSWORD}
+      UPSNAP_HOSTS_JSON: ${UPSNAP_HOSTS_JSON:-}
+      UPSNAP_DEVICE_IDS: ${UPSNAP_DEVICE_IDS:-}
+      WAKE_MAC_ADDRESSES: ${WAKE_MAC_ADDRESSES:-}
+      NUTIFY_CONTAINER_NAME: nutify
+      POLL_INTERVAL: ${POLL_INTERVAL:-30}
+      FSD_DRY_RUN: ${FSD_DRY_RUN:-false}
+      HOST_SHUTDOWN_ENABLED: ${HOST_SHUTDOWN_ENABLED:-true}
+      HOST_SHUTDOWN_DELAY: ${HOST_SHUTDOWN_DELAY:-120}
+      HOST_SHUTDOWN_COMMAND: ${HOST_SHUTDOWN_COMMAND:-nsenter,-t,1,-m,-u,-i,-n,-p,--,/sbin/shutdown,-h,now}
+      FORCE_ON_BATTERY: ${FORCE_ON_BATTERY:-false}
+      FORCE_BATTERY_CHARGE: ${FORCE_BATTERY_CHARGE:-}
+    volumes:
+      - nut-flags:/var/run/nut-flags
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host-gateway:host-gateway"
+    networks:
+      - ups-net
+
+volumes:
+  nut-flags:
+  upsnap-data:
+
+networks:
+  ups-net:
+    driver: bridge

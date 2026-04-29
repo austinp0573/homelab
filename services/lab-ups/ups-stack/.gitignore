@@ -1,0 +1,11 @@
+.env
+nutify-data/
+nutify-working/
+upsnap-data/
+upsnap_shutdown_key
+upsnap_shutdown_key.pub
+*.sqlite
+*.sqlite-*
+*.db
+*.log
+*.log.*

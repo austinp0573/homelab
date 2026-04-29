@@ -14,3 +14,12 @@ security/
 update/
 deploy_*.yml
 run_*.yml
+.env
+nutify-data/
+upsnap-data/
+restore-state/
+upsnap_shutdown_key
+upsnap_shutdown_key.pub
+test-logs/
+*.log
+hosts.yml

@@ -1,0 +1,23 @@
+Before deployment, test:
+
+Set test overrides off:
+
+FORCE_ON_BATTERY=false
+FORCE_BATTERY_CHARGE=
+FSD_DRY_RUN=true
+Unplug UPS AC and confirm watcher sees real OB.
+
+With FSD_DRY_RUN=true, confirm thresholds trigger without shutdown.
+
+Set FSD_DRY_RUN=false and test real FSD with no important clients.
+
+Confirm NanoPi shuts down cleanly and UPS behavior is correct.
+
+Add one NUT client, trigger FSD, confirm client shuts down.
+
+Add all NUT clients and repeat.
+
+Restore AC, boot NanoPi, confirm watcher waits for WAKEUP_BATTERY_THRESHOLD and calls UpSnap wake.
+
+Confirm UpSnap shutdown and wake work for every configured host.
+

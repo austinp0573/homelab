@@ -18,9 +18,9 @@
 
 * **Management Interface:** Onboard Intel 1Gbps NIC
 * **Hostname:** `${PVE04_HOSTNAME}`
-* **IP Address:** `${PVE04_IP}` (management network)
-* **Gateway:** `${PVE_GATEWAY_OR_DNS}` (gateway)
-* **DNS:** `${PVE_GATEWAY_OR_DNS}` (gateway)
+* **IP Address:** `${PVE04_IP}`
+* **Gateway:** `${PVE04_GATEWAY}`
+* **DNS:** `${PVE04_DNS}`
 
 ## Post Install
 
