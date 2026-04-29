@@ -1,0 +1,204 @@
+name: power-control
+
+services:
+  # One-shot that patches ups.conf and upsd.users after Nutify's first-run setup.
+  # Run manually: docker compose up nut-policy-init && docker compose restart nutify
+  nut-policy-init:
+    image: python:3.13-alpine
+    container_name: power-nut-policy-init
+    restart: "no"
+    working_dir: /app
+    environment:
+      PYTHONUNBUFFERED: "1"
+      UPS_NAME: ${UPS_NAME:-}
+      UPS_BATTERY_DATE: ${UPS_BATTERY_DATE:-}
+      UPS_BATTERY_MFR_DATE: ${UPS_BATTERY_MFR_DATE:-}
+      NUT_ALLOW_KILLPOWER: ${NUT_ALLOW_KILLPOWER:-}
+      NUT_UPS_OFF_DELAY: ${NUT_UPS_OFF_DELAY:-}
+      NUT_UPS_ON_DELAY: ${NUT_UPS_ON_DELAY:-}
+      UPS_EXTRA_CONFIG: ${UPS_EXTRA_CONFIG:-}
+      NUT_LOW_BATTERY_THRESHOLD: ${NUT_LOW_BATTERY_THRESHOLD:-20}
+      NUT_CLIENT_USER: ${NUT_CLIENT_USER:-}
+      NUT_CLIENT_PASSWORD: ${NUT_CLIENT_PASSWORD:-}
+      NUT_CLIENT_ROLE: ${NUT_CLIENT_ROLE:-slave}
+      NUT_FSD_USER: ${NUT_FSD_USER:-}
+      NUT_FSD_PASSWORD: ${NUT_FSD_PASSWORD:-}
+      NUT_CONFIG_UID: ${NUT_CONFIG_UID:-1000}
+      NUT_CONFIG_GID: ${NUT_CONFIG_GID:-1000}
+    volumes:
+      - ./nut-policy-init/apply_nut_policy.py:/app/apply_nut_policy.py:ro
+      - ./nutify-data/etc/nut:/etc/nut
+    command: ["python", "/app/apply_nut_policy.py"]
+
+  # NUT server + web UI. Needs USB access to talk to the UPS hardware.
+  nutify:
+    image: ${NUTIFY_IMAGE:-dartsteven/nutify:latest-raspberrypi5-arm64}
+    container_name: nutify
+    restart: unless-stopped
+    # privileged + SYS_RAWIO + MKNOD are required for the NUT USB HID driver.
+    # device_cgroup_rules: 189 is the USB device class.
+    privileged: true
+    user: root
+    cap_add:
+      - SYS_ADMIN
+      - SYS_RAWIO
+      - MKNOD
+    devices:
+      - /dev/bus/usb:/dev/bus/usb:rwm
+    device_cgroup_rules:
+      - "c 189:* rwm"
+    environment:
+      TZ: ${TZ:-America/Chicago}
+      SECRET_KEY: ${NUTIFY_SECRET_KEY}
+      # UDEV=1 tells Nutify to start udevd so the USB UPS is recognized at runtime.
+      UDEV: "1"
+      LOG: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_WERKZEUG: ${LOG_WERKZEUG:-true}
+      ENABLE_LOG_STARTUP: ${ENABLE_LOG_STARTUP:-Y}
+      SSL_ENABLED: ${SSL_ENABLED:-false}
+    volumes:
+      - ./nutify-data/etc/nut:/etc/nut
+      - ./nutify-data/instance:/app/nutify/instance
+      - ./nutify-data/logs:/app/nutify/logs
+      - ./nutify-data/ssl:/app/ssl
+      - /run/udev:/run/udev:ro
+    ports:
+      - "0.0.0.0:3493:3493"
+      - "${NUTIFY_WEB_PORT:-5050}:5050"
+    networks:
+      - power-net
+
+  # WoL and manual shutdown UI.
+  # network_mode: host is required because WoL packets are LAN broadcasts and
+  # Docker bridge networks don't forward them. NET_RAW is for ICMP ping checks.
+  upsnap:
+    image: ${UPSNAP_IMAGE:-ghcr.io/seriousm4x/upsnap:5}
+    container_name: upsnap
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      upsnap-ssh-init:
+        condition: service_completed_successfully
+    cap_add:
+      - NET_RAW
+    cap_drop:
+      - ALL
+    environment:
+      TZ: ${TZ:-America/Chicago}
+      UPSNAP_HTTP_LISTEN: 0.0.0.0:${UPSNAP_PORT:-8090}
+      UPSNAP_INTERVAL: ${UPSNAP_INTERVAL:-*/10 * * * * *}
+      UPSNAP_SCAN_RANGE: ${UPSNAP_SCAN_RANGE:-}
+      UPSNAP_SCAN_TIMEOUT: ${UPSNAP_SCAN_TIMEOUT:-500ms}
+      UPSNAP_PING_PRIVILEGED: ${UPSNAP_PING_PRIVILEGED:-true}
+      UPSNAP_WEBSITE_TITLE: ${UPSNAP_WEBSITE_TITLE:-Power Control}
+    volumes:
+      - upsnap-data:/app/pb_data
+      - ./upsnap-data/ssh:/app/ssh
+
+  # Decodes the base64 SSH key from .env and writes it to upsnap-data/ssh/ before
+  # UpSnap starts. Wired as a depends_on condition so the key is always in place.
+  upsnap-ssh-init:
+    image: alpine:3.20
+    container_name: power-upsnap-ssh-init
+    restart: "no"
+    environment:
+      UPSNAP_SSH_PRIVATE_KEY_B64: ${UPSNAP_SSH_PRIVATE_KEY_B64:-}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        mkdir -p /app/ssh
+        chmod 700 /app/ssh
+        if [ -n "$${UPSNAP_SSH_PRIVATE_KEY_B64:-}" ]; then
+          printf '%s' "$${UPSNAP_SSH_PRIVATE_KEY_B64}" | base64 -d > /app/ssh/id_ed25519
+          chmod 600 /app/ssh/id_ed25519
+          echo "[upsnap-ssh-init] Wrote /app/ssh/id_ed25519"
+        else
+          echo "[upsnap-ssh-init] UPSNAP_SSH_PRIVATE_KEY_B64 is empty; no key written"
+        fi
+        touch /app/ssh/known_hosts
+        chmod 600 /app/ssh/known_hosts
+    volumes:
+      - ./upsnap-data/ssh:/app/ssh
+
+  # One-shot that provisions device records in UpSnap via its REST API.
+  # Run manually after creating the first UpSnap admin: docker compose up upsnap-init
+  upsnap-init:
+    build:
+      context: ./upsnap-init
+      dockerfile: Dockerfile
+    image: power-upsnap-init:latest
+    container_name: power-upsnap-init
+    restart: "no"
+    depends_on:
+      - upsnap
+    environment:
+      PYTHONUNBUFFERED: "1"
+      # host-gateway resolves to the Docker host IP, which is where UpSnap listens
+      # (network_mode: host). This is how bridge-networked containers reach it.
+      UPSNAP_URL: http://host-gateway:${UPSNAP_PORT:-8090}
+      UPSNAP_ADMIN_EMAIL: ${UPSNAP_ADMIN_EMAIL}
+      UPSNAP_ADMIN_PASSWORD: ${UPSNAP_ADMIN_PASSWORD}
+      UPSNAP_HOSTS_JSON: ${UPSNAP_HOSTS_JSON:-}
+      UPSNAP_SSH_USER: ${UPSNAP_SSH_USER:-upsnap-shutdown}
+      UPSNAP_SSH_KEY_PATH: ${UPSNAP_SSH_KEY_PATH:-/app/ssh/id_ed25519}
+      UPSNAP_SSH_OPTIONS: ${UPSNAP_SSH_OPTIONS:--o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/app/ssh/known_hosts}
+      UPSNAP_DEFAULT_SHUTDOWN_COMMAND: ${UPSNAP_DEFAULT_SHUTDOWN_COMMAND:-sudo /sbin/shutdown -h now}
+      UPSNAP_DEFAULT_SHUTDOWN_TIMEOUT: ${UPSNAP_DEFAULT_SHUTDOWN_TIMEOUT:-120}
+      UPSNAP_INIT_TIMEOUT: ${UPSNAP_INIT_TIMEOUT:-120}
+      UPSNAP_INIT_SKIP: ${UPSNAP_INIT_SKIP:-false}
+    volumes:
+      - ./upsnap-data/ssh:/app/ssh:ro
+    extra_hosts:
+      - "host-gateway:host-gateway"
+    networks:
+      - power-net
+
+  # Polls NUT, triggers FSD and killpower on low battery, wakes hosts on AC restore.
+  restore-watcher:
+    build:
+      context: ./restore-watcher
+      dockerfile: Dockerfile
+    image: power-restore-watcher:latest
+    container_name: power-restore-watcher
+    restart: unless-stopped
+    depends_on:
+      - nutify
+      - upsnap
+    environment:
+      PYTHONUNBUFFERED: "1"
+      UPS_NAME: ${UPS_NAME:-}
+      NUT_HOST: nutify
+      NUT_PORT: "3493"
+      NUT_USER: ${NUT_CLIENT_USER:-clientmon}
+      NUT_PASSWORD: ${NUT_CLIENT_PASSWORD}
+      NUT_FSD_USER: ${NUT_FSD_USER:-}
+      NUT_FSD_PASSWORD: ${NUT_FSD_PASSWORD:-}
+      KILLPOWER_DELAY: ${KILLPOWER_DELAY:-60}
+      RESTORE_WAKEUP_BATTERY_THRESHOLD: ${RESTORE_WAKEUP_BATTERY_THRESHOLD:-60}
+      RESTORE_MARK_BATTERY_THRESHOLD: ${NUT_LOW_BATTERY_THRESHOLD:-20}
+      RESTORE_MARK_ON_BATTERY_SECONDS: ${NUT_ON_BATTERY_SECONDS:-1800}
+      POLL_INTERVAL: ${RESTORE_POLL_INTERVAL:-30}
+      UPSNAP_URL: http://host-gateway:${UPSNAP_PORT:-8090}
+      UPSNAP_ADMIN_EMAIL: ${UPSNAP_ADMIN_EMAIL}
+      UPSNAP_ADMIN_PASSWORD: ${UPSNAP_ADMIN_PASSWORD}
+      UPSNAP_HOSTS_JSON: ${UPSNAP_HOSTS_JSON:-}
+      UPSNAP_DEVICE_IDS: ${UPSNAP_DEVICE_IDS:-}
+      WAKE_MAC_ADDRESSES: ${WAKE_MAC_ADDRESSES:-}
+    volumes:
+      - ./restore-state:/state
+    extra_hosts:
+      - "host-gateway:host-gateway"
+    networks:
+      - power-net
+
+volumes:
+  # Named volume for UpSnap's PocketBase database. Bind mount would also work but
+  # a named volume keeps it out of the repo directory and simplifies backup targeting.
+  upsnap-data:
+
+networks:
+  power-net:
+    driver: bridge
