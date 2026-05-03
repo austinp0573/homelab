@@ -16,6 +16,9 @@
 
 ## Network Configuration
 
+* set onboard Intel 1Gbps to `eth0`
+* set Intel i226v 2.5Gbps to `i226v`
+
 * **Management Interface:** Onboard Intel 1Gbps NIC
 * **Hostname:** `${PVE05_HOSTNAME}`
 * **IP Address:** `${PVE05_IP}`

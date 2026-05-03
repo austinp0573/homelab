@@ -6,8 +6,8 @@
 | --- | --- | --- |
 | **Filesystem** | `ext4` | Standard, rock-solid stability for the OS root partition. |
 | **hdsize** | `931GB` | Use the full disk capacity (1TB decimal $\approx$ 931-953 GiB). |
-| **swapsize** | `16GB` | Large drive, and large RAM; provides a safety net for OOM events. |
-| **maxroot** | `80GB` | Allocates 60GB for `/`. Sufficient for logs, OS, and some ISO storage. |
+| **swapsize** | `8GB` | Large drive, and large RAM; provides a safety net for OOM events. |
+| **maxroot** | `80GB` | Allocates 80GB for `/`. Sufficient for logs, OS, and some ISO storage. |
 | **minfree** | `93GB` | Reserves ~10% of the 1TB. Critical for LVM snapshot metadata overhead. |
 | **maxvz** | `0GB` | **Mandatory.** Prevents a large `/var/lib/pve/local-vzdump`. Forces LVM-Thin. |
 
@@ -15,6 +15,9 @@
 * **Gotcha:** If you ignore `maxvz=0`, the installer creates a standard directory on the root partition for backups. On a 1TB drive, this often results in a massive OS partition and a tiny, useless Thin Pool.
 
 ## Network Configuration
+
+* set onboard Intel 1Gbps to `eth0`
+* set Intel i226v 2.5Gbps to `i226v`
 
 * **Management Interface:** Onboard Intel 1Gbps NIC
 * **Hostname:** `${PVE04_HOSTNAME}`

@@ -23,3 +23,5 @@ upsnap_shutdown_key.pub
 test-logs/
 *.log
 hosts.yml
+.venv/
+pve-post-install.sh

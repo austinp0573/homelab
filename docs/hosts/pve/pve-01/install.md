@@ -16,6 +16,10 @@
 
 ## Network Configuration
 
+* set onboard Intel 1Gbps to `eth0`
+* set 1st Mellanox SFP NIC port to `sfp0`
+* set 2nd Mellanox SFP NIC port to `sfp1`
+
 * **Management Interface:** Onboard Intel 1Gbps NIC
 * **Hostname:** `${PVE01_HOSTNAME}`
 * **IP Address:** `${PVE01_IP}`
