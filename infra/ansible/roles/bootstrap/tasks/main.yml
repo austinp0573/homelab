@@ -39,7 +39,7 @@
     shell: /bin/bash
     create_home: yes
     state: present
-    password: " {{ austin_user_password }}"
+    password: " {{ austin_user_password | password_hash('sha512') }}"
   become: yes
 
 - name: Ensure .ssh directory exists for the ansible user
