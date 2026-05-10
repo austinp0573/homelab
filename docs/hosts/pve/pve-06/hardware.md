@@ -12,11 +12,134 @@
     - Network:
         - 1Gbps Intel (Onboard)
         - 2.5Gbps Intel i226v (M.2 A+E Key Adapter)
+    - GPU:
+        - AMD Radeon AI Pro R9700 (Sapphire)
+            - 32GB VRAM
 
 ## BIOS
+1. Advanced
+- `Restore AC Power Loss` — **Power Off**
+- `Wake on LAN` — **Enabled**
+- ACPI Settings:
+    - `Enable ACPI Auto Configuration` — **disabled**. Let the OS manage ACPI rather than BIOS auto-config, which can conflict with Linux.
+    - `Enable Hibernation` — **disabled**. Server, no need, and S4 sleep state can cause issues.
+    - `ACPI Sleep State` — **suspend disabled**. You don't want a server hibernating.
+    - `Lock Legacy Resources` — **disabled**. Locking legacy IRQ/DMA resources can interfere with PCIe device assignment.
+- S5 RTC Wake Settings:
+    - `Wake system from S5` — **disabled**
+- PCI Subsystem Settings:
+    - `Above 4G Decoding` — **enabled**
+    - `SR-IOV Support` — **enabled**
+    - `PCI Latency Timer` — **default** (32 or 64). Not relevant for PCIe devices.
+    - `PCI-X Latency Timer` — **default**. Legacy setting.
+    - `VGA Palette Snoop` — **disabled**. Legacy VGA thing, irrelevant.
+    - `PERR#/SERR# Generation` — **disabled**. Enabling these can cause system halts on non-fatal PCIe errors, which AMD GPUs occasionally generate harmlessly.
+    - `BME DMA Mitigation` — **disabled**. This restricts bus-master DMA before IOMMU is fully initialized — sounds good in theory but can interfere with passthrough. With IOMMU properly configured you don't need it.
+    - `Relaxed Ordering` — **enabled**. Improves PCIe throughput.
+    - `Extended Tag` — **enabled**. Allows more outstanding PCIe transactions, helps GPU performance.
+    - `No Snoop` — **enabled**. GPU drivers use this, disabling it can hurt performance.
+    - `Maximum Payload` — **Auto** or **256B**. Larger is generally better for throughput; Auto lets the device negotiate.
+- Network Stack Configuration:
+    - `Network Stack` — **enabled**
+- CSM Configuration:
+    - `CSM Support` — **disabled**
+        - Had to switch `Video` to **uefi** and reboot so I could actually change `CSM Support` to **disabled**
+2. IntelRCSetup
+- Processor Configuration:
+    - `Check CPU BIST result` — **enabled**. Self-test on boot, harmless.
+    - `Monitor/Mwait` — **enabled**. OS and hypervisor use this for efficient CPU idle states.
+    - `Execute Disable Bit` — **enabled**. Security feature, Proxmox expects it.
+    - `Intel TXT` — **disabled**. Trusted Execution Technology adds complexity with no benefit for your use case, can interfere with virtualization.
+    - `VMX` — **enabled**. This is VT-x. This is what you were looking for.
+    - `Enable SMX` — **disabled** unless you're using TXT. Paired with TXT, not needed.
+    - `Lock Chipset` — **enabled** (default). Security hardening, no impact.
+    - `MSR Lock Control` — **enabled**.
+    - `PPIN Control` — **default**. Processor serial number access, irrelevant.
+    - `Debug Interface` — **disabled**. Security risk if left open.
+    - `Hardware Prefetcher` — **enabled**. Helps inference workload memory access patterns.
+    - `DCU Mode` — **default**.
+    - `Direct Cache Access (DCA)` — **enabled**. Reduces latency for network/PCIe DMA.
+    - `DCA Prefetch Delay` — **default** (typically 32).
+    - `x2APIC` — **enabled**. Required for systems with many vCPUs, Proxmox benefits from it.
+    - `Targeted SMI` — **default**. SMI routing optimization, no meaningful impact.
+- Advanced Power Management Configuration:
+    - `Power Technology` — **Custom**. "Energy Efficient" lets the CPU throttle, bad for consistent inference latency.
+    - `Config TDP` — **default**.
+    - `IOTG Setting` — **default**, irrelevant to your use case.
+    - `Uncore CLR Freq OVRD` — **default** unless you're overclocking, which you're not.
+    - `CPU P State Control` — **enabled**, then set to `HWP Native Mode` if available. Allows the OS to control P-states directly, better than BIOS-managed.
 
-- Integrated NIC: Enabled
-- Secure Boot: Disabled
-- Virtualization Support: All Enabled
-- AC Recovery: Power Off
-- Wake on LAN: Enabled
+    - `CPU HWPM State Control` — **enabled**. Works with P-state control above.
+        - `Enable CPU Autonomous C-State` — **disabled** (Disable it. Autonomous C-state allows the CPU to make its own C-state decisions independent of OS control — counterproductive when you've just manually configured C-states above. )
+
+    - `CPU C State Control` — go in here, disable C6 and C7. Leave C1/C1E enabled.
+        - `C2C3TT` — **default**
+        - `Package C State Limit` — `C2` to prevent deep package sleep states
+        - `CPU C3 Report` — **disabled**
+        - `CPU C6 Report` — **disabled**
+            - `CPU C3 Report` and `CPU C6 Report` control whether the CPU reports those C-states as available to the OS. If C6 was enabled, the OS can put cores into C6 deep sleep — disable it for consistent latency on a server.
+
+    - `CPU T State Control` — **disabled** (disable T-states entirely. T-states are throttling via duty cycles, never useful for a server).
+        - `ACPI T-States` — **disabled**. T-states are CPU throttling via clock modulation — never useful for a server.
+    - CPU Advanced PM Tuning:
+        - Energy Perf BIAS:
+            - `Energy Performance Tuning` — **disabled**. You want manual control, not auto-tuning.
+            - `Energy Performance Bias Setting` — will unlock when tuning is disabled; set to `Performance`
+            - `Power/Performance Switch` — **disabled** once bias is set to Performance
+            - `Workload Configuration` — **I/O Sensitive** (best for inference with GPU DMA traffic)
+            - `Average Time Window` — **default** (23)
+            - `P0 TotalTimeThreshold Low` — **default** (35)
+            - `P0 TotalTimeThreshold High` — **default** (58)
+    - `SOCKET RAPL Config` — **default** (RAPL is power capping. Leave defaults. Don't set aggressive power limits or inference will throttle.)
+    - `DRAM RAPL` — **default**, leave defaults.
+- QPI Configuration:
+    - QPI General Configuration:
+        - `Link Freqency Select` — **9.6GB/s** (Check that QPI Link Speed is set to maximum (Fast or 9.6 GT/s for E5-2680v4). QPI is the CPU-to-chipset bus, you want it at full speed.)
+- Memory Configuration:
+    - Memory Thermal:
+        - `Memory Power Saving Mode` — **disabled** (disable any memory power saving options. DRAM power saving introduces latency spikes, same reasoning as CPU C-states.)
+- IIO Configuration:
+    - `PCIe Train by BIOS` — **enabled** (Yes, leave it)
+    - `PCIe Hot Plug` — **disabled**, correct
+    - `PCIe ACPI Hot Plug` — **disabled**, correct
+    - `EV DFX Features` — **disabled**, correct (debug feature)
+    - `IOAT Configuration` — **enabled** (go in here, enable IOAT (I/O Acceleration Technology). Helps with DMA throughput for your workload)
+        - `Enable IOAT` — **enabled**
+        - Just enable IOAT and leave everything else in there at default.
+
+    - `Intel VT for Directed I/O (VT-d)` — **enabled**. This is what you were looking for earlier
+    - `PCI Express Global Options`:
+    - `TX EQ WA` — **enabled** (PCIe signal equalization workaround)
+    - `DMI Vc1/Vcp/Vem Control` — **disabled**
+    - `VCO No-Snoop Configuration` — **disabled**
+    - `Gen3 Phase3 Loop Count` — **default** (16)
+    - `Skip Halt on DMI Degradation` — **disabled**
+    - `Power Down Unused Ports` — **enabled** (Yes, leave it)
+    - `SLD WA Revision / Rx Clock WA` — **default**
+    - `PCI-E ASPM (Global)` — **disabled**. This is the global ASPM toggle, critical for passthrough stability
+- PCH Configuration:
+    - PCH Devices:
+        - `DeepSx Power Policies` — **disabled**, correct
+        - `GPe Wake From DeepSx` — **disabled**, correct
+        - `SMBUS Device` — **enabled**, leave it
+        - `PCH Server Error Reporting` — **disabled**, leave it
+        - `PCH Display` — **enabled**, leave it
+        - `Serial IRQ Mode` — `Quiet` is fine
+        - `External SSC Enable` — **disabled**, leave it
+        - `PCH State After G3` — `S0` means it powers on after power loss. Good for a server, leave it
+        - `PCH CRID` — **disabled**, leave it
+    - PCI Express Configuration
+        - `PCI-E ASPM SUPPORT (GLOBAL)` — **disabled** (ASPM: Disable it. ASPM (Active State Power Management) on PCIe can cause passthrough instability and intermittent GPU resets. Not worth the minimal power saving.)
+        - Azalea is an AMD BIOS feature for memory training optimization on EPYC/Threadripper platforms. Not relevant to your X99/E5-2680v4 setup — you won't see it, and if you do, ignore it.
+    - Platform Thermal Configuration
+        - `PCH Thermal Device` — **enabled** (just helps with thermal reporting)
+        - `alert enable lock` — **disabled** (locks the the thermal alert threshold so it can't be changed at runtime by software, no reason to use this)
+    - USB Configuration
+        - `USB Precondition` — **default** (disabled). Speeds up USB init but can cause enumeration issues.
+        - `xHCI mode` — **Smart Auto** or **Auto** is fine. Don't set to disabled.
+        - `BTCG` — **enabled**, it's a PCH clock gating power optimization, harmless.
+        - `Per-port disable control` — **disabled** unless you need to physically disable specific ports.
+        - `xHCI idle L1` — **default**. Minor power saving, no real impact.
+        - `S755 WA / Interrupt Remap WA` — **Auto** or **enabled**. These are workarounds for specific USB errata; they exist for a reason.
+
+# Save As user defaults
