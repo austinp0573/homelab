@@ -10,6 +10,7 @@
       - fdupes
       - gnupg
       - apt-transport-https
+      - tree
     state: present
     update_cache: yes
 
