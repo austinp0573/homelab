@@ -1,0 +1,46 @@
+#cloud-config
+hostname: "$HOSTNAME"
+package_update: true
+package_upgrade: true
+
+packages:
+  - git
+  - curl
+  - vim-nox
+  - tmux
+  - htop
+  - qemu-guest-agent
+  - tree
+  - wget
+
+ssh_pwauth: false
+disable_root: true
+users:
+  - name: "$USER_NAME"
+    lock_passwd: false
+    sudo: "$USER_SUDO"
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - "$SSH_AUTHORIZED_KEYS"
+    passwd: "$PASSWD"
+
+timezone: "$TIMEZONE"
+
+growpart:
+  mode: auto
+  devices: ['/']
+  ignore_growroot_disabled: false
+resize_rootfs: true
+
+write_files:
+  - path: /etc/profile.d/motd.sh
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+      echo "Welcome to $(hostname)"
+
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - date > /etc/VM_birthday
+
+final_message: "Cloud-init completed on Debian 13: $VERSION"
