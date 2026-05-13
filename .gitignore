@@ -28,3 +28,5 @@ pve-post-install.sh
 group_vars/
 *pve_init*
 traccar/
+PXL*
+pve*.webp
