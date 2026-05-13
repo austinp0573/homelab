@@ -138,7 +138,8 @@ softdep amdgpu pre: vfio-pci
 ```
 
 Then create `/etc/modprobe.d/blacklist-amdgpu.conf`:
-```
+
+```bash
 blacklist amdgpu
 blacklist radeon
 ```
