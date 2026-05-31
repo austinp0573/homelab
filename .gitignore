@@ -30,3 +30,6 @@ group_vars/
 traccar/
 PXL*
 pve*.webp
+scripts/proxmox/setup_webserver.sh
+alpine-vm-nginx/
+speedtest-go/
