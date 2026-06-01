@@ -1,0 +1,80 @@
+---
+- name: Require Alpine Linux
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Alpine"
+    fail_msg: "wireguard_server currently supports alpine linux only"
+
+- name: Require WireGuard server settings
+  ansible.builtin.assert:
+    that:
+      - wireguard_private_key is defined
+      - wireguard_private_key | length > 0
+      - wireguard_address is defined
+      - wireguard_address | length > 0
+      - wireguard_address is match(_wireguard_cidr_regex)
+      - wireguard_listen_port | int >= 1
+      - wireguard_listen_port | int <= 65535
+      - wireguard_ssh_listen_port | int >= 1
+      - wireguard_ssh_listen_port | int <= 65535
+      - wireguard_peers is sequence
+      - wireguard_peers is not string
+      - wireguard_ssh_allowed_cidrs is sequence
+      - wireguard_ssh_allowed_cidrs is not string
+      - wireguard_udp_allowed_cidrs is sequence
+      - wireguard_udp_allowed_cidrs is not string
+      - wireguard_packages is sequence
+      - wireguard_packages is not string
+    fail_msg: "wireguard_private_key, wireguard_address, ports, packages, and peers must be valid"
+  vars:
+    _wireguard_cidr_regex: '^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$'
+
+- name: Require valid ingress allowlists
+  ansible.builtin.assert:
+    that:
+      - item is match(_wireguard_cidr_regex)
+    fail_msg: "wireguard ingress allowlists must contain ipv4 cidr strings"
+  loop: "{{ wireguard_ssh_allowed_cidrs + wireguard_udp_allowed_cidrs }}"
+  vars:
+    _wireguard_cidr_regex: '^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$'
+
+- name: Require valid peer definitions
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name | length > 0
+      - item.name is match('^[a-zA-Z0-9_.-]+$')
+      - item.ip is defined
+      - item.ip is match(_wireguard_ipv4_regex)
+      - item.public_key is defined
+      - item.public_key | length > 0
+      - item.can_talk_to is not defined or (item.can_talk_to is sequence and item.can_talk_to is not string)
+    fail_msg: "each peer must define name, ip, public_key, and an optional can_talk_to list"
+  loop: "{{ wireguard_peers }}"
+  loop_control:
+    label: "{{ item.name | default('unnamed-peer') }}"
+  vars:
+    _wireguard_ipv4_regex: '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+
+- name: Require valid peer access targets
+  ansible.builtin.assert:
+    that:
+      - item.1 is match(_wireguard_cidr_regex)
+    fail_msg: "peer can_talk_to entries must be ipv4 cidr strings"
+  loop: "{{ wireguard_peers | subelements('can_talk_to', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1 }}"
+  vars:
+    _wireguard_cidr_regex: '^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$'
+
+- name: Require unique peer names
+  ansible.builtin.assert:
+    that:
+      - wireguard_peers | map(attribute='name') | list | length == wireguard_peers | map(attribute='name') | list | unique | list | length
+    fail_msg: "wireguard peer names must be unique"
+
+- name: Require unique peer addresses
+  ansible.builtin.assert:
+    that:
+      - wireguard_peers | map(attribute='ip') | list | length == wireguard_peers | map(attribute='ip') | list | unique | list | length
+    fail_msg: "wireguard peer addresses must be unique"

@@ -1,0 +1,41 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        # allow established traffic and loopback
+        ct state { established, related } accept
+        iifname "lo" accept
+
+        # allow ssh management access
+{% for cidr in wireguard_ssh_allowed_cidrs | sort %}
+        ip saddr {{ cidr }} tcp dport {{ wireguard_ssh_listen_port }} accept
+{% endfor %}
+
+        # allow wireguard tunnel ingress
+{% for cidr in wireguard_udp_allowed_cidrs | sort %}
+        ip saddr {{ cidr }} udp dport {{ wireguard_listen_port }} accept
+{% endfor %}
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+
+        # allow replies for approved peer connections
+        ct state { established, related } accept
+
+        # allow approved peer-initiated traffic through the tunnel
+{% for peer in wireguard_peers | sort(attribute='name') %}
+{% for target in peer.can_talk_to | default([]) | sort %}
+        iifname "{{ wireguard_interface }}" oifname "{{ wireguard_interface }}" ip saddr {{ peer.ip }} ip daddr {{ target }} accept
+{% endfor %}
+{% endfor %}
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+}
