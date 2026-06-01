@@ -1,0 +1,28 @@
+---
+- name: Bootstrap Debian-family hosts for Ansible
+  hosts: debian_bootstrap_targets
+  gather_facts: false
+  become: true
+  pre_tasks:
+    - name: Ensure Python is available for Ansible
+      ansible.builtin.raw: |
+        if [ ! -f /etc/debian_version ]; then
+            echo "unsupported operating system: expected debian-family linux" >&2
+            exit 1
+        fi
+
+        if command -v python3 >/dev/null 2>&1; then
+            echo "python present"
+        else
+            apt-get update
+            apt-get install -y python3 sudo
+            echo "python installed"
+        fi
+      register: debian_python_bootstrap
+      changed_when: "'python installed' in debian_python_bootstrap.stdout"
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+  roles:
+    - bootstrap
