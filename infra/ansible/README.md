@@ -74,3 +74,13 @@ ansible-playbook playbooks/system/base.yml
 ```
 
 Use `debian_bootstrap_targets` for first-run bootstrap and `debian_hosts` for steady-state base configuration. The older root-level `site.yml` and original playbooks remain for compatibility while the repo is being reorganized. The `base` and `bootstrap` role task files are intentionally preserved as-is.
+
+## site playbook
+
+`site.yml` remains as the broad homelab entry point, but its targets are explicit:
+
+- `debian_hosts` receives the Debian-family `base` role
+- `nut_servers` receives the `nut_server` role
+- `nut_clients` receives the `nut_client` role
+
+This avoids matching unrelated groups such as `wireguard_servers`.

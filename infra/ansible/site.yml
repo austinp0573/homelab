@@ -1,18 +1,18 @@
 ---
-- name: Apply Foundation Configuration
-  hosts: all
+- name: Apply debian foundation configuration
+  hosts: debian_hosts
   become: true
   roles:
     - base
 
 - name: Configure NUT Servers
-  hosts: "*_servers"
+  hosts: nut_servers
   become: true
   roles:
     - nut_server
 
 - name: Configure NUT Clients
-  hosts: "*_clients"
+  hosts: nut_clients
   become: true
   roles:
     - nut_client
