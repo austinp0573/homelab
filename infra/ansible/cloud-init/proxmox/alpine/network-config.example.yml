@@ -1,0 +1,14 @@
+---
+version: 2
+ethernets:
+  eth0:
+    dhcp4: false
+    addresses:
+      - 192.0.2.10/24
+    routes:
+      - to: default
+        via: 192.0.2.1
+    nameservers:
+      addresses:
+        - 1.1.1.1
+        - 9.9.9.9
