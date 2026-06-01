@@ -11,6 +11,9 @@ inventories/
   homelab/
     hosts.example.yml
     hosts.yml
+cloud-init/
+  proxmox/
+    alpine/
 playbooks/
   proxmox/
     alpine_vm.yml
@@ -31,6 +34,10 @@ ansible-playbook playbooks/proxmox/alpine_vm.yml
 ```
 
 Cloud-init should get the host reachable and install enough base tooling for Ansible, including Python. After that, this playbook owns the desired state: users, doas, shell profile, packages, Dropbear, Proxmox guest agent, low-resource tuning, swap/zram, and cleanup.
+
+NoCloud examples live in `cloud-init/proxmox/alpine/`. They are intentionally minimal first-boot bootstrap snippets, not a replacement for Ansible.
+
+Alpine inventory entries should use `ansible_become_method: doas`. The default doas rules keep the `ansible` management user passwordless while allowing wheel users to use persistent doas.
 
 Alpine hosts use Dropbear as the managed SSH server. The baseline role still installs the OpenSSH SCP client package so legacy SCP transfers work against Dropbear, and `ansible.cfg` forces legacy SCP mode with `scp_extra_args = -O`.
 

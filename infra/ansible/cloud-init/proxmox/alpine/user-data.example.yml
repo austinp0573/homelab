@@ -1,0 +1,43 @@
+#cloud-config
+hostname: alpine-vm-01
+manage_etc_hosts: true
+
+users:
+  - name: ansible
+    gecos: ansible management user
+    groups:
+      - wheel
+    shell: /bin/ash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ssh-ed25519 replace-with-public-key
+
+package_update: true
+packages:
+  - ca-certificates
+  - doas
+  - dropbear
+  - dropbear-openrc
+  - openssh-client-default
+  - python3
+  - qemu-guest-agent
+  - qemu-guest-agent-openrc
+
+write_files:
+  - path: /etc/doas.d/ansible.conf
+    owner: root:root
+    permissions: "0640"
+    content: |
+      permit nopass ansible
+  - path: /etc/conf.d/dropbear
+    owner: root:root
+    permissions: "0644"
+    content: |
+      DROPBEAR_OPTS="-s"
+
+runcmd:
+  - rc-update add dropbear default
+  - rc-service dropbear start
+  - rc-update add qemu-guest-agent default
+  - rc-service qemu-guest-agent start
+  - rc-update del sshd default || true

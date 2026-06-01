@@ -1,7 +1,23 @@
 ---
 - name: Provision optimized Alpine Proxmox VMs
   hosts: alpine_proxmox_vms
+  gather_facts: false
   become: true
+  pre_tasks:
+    - name: Ensure Python is available for Ansible
+      ansible.builtin.raw: |
+        if command -v python3 >/dev/null 2>&1; then
+            echo "python present"
+        else
+            apk add --no-cache python3
+            echo "python installed"
+        fi
+      register: alpine_vm_python_bootstrap
+      changed_when: "'python installed' in alpine_vm_python_bootstrap.stdout"
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
   roles:
     - alpine_baseline
     - proxmox_guest

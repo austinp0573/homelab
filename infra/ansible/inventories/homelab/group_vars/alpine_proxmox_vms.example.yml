@@ -13,6 +13,7 @@ alpine_baseline_users:
     ssh_authorized_keys: []
 
 alpine_baseline_doas_rules:
+  - "permit nopass ansible"
   - "permit persist :wheel"
 
 alpine_low_resource_enable_zram: true

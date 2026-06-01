@@ -18,7 +18,9 @@ alpine_baseline_packages:
 alpine_baseline_remove_tzdata_after_timezone: true
 
 alpine_baseline_users: []
+alpine_baseline_management_user: "{{ ansible_user | default('ansible') }}"
 alpine_baseline_doas_rules:
+  - "permit nopass {{ alpine_baseline_management_user }}"
   - "permit persist :wheel"
 
 alpine_baseline_copy_root_authorized_keys: false
