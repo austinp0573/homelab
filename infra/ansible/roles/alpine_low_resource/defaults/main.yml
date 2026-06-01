@@ -1,0 +1,109 @@
+---
+alpine_low_resource_manage_bootloader: false
+alpine_low_resource_mkinitfs_features: "base ext4 virtio"
+alpine_low_resource_kernel_options:
+  - audit=0
+  - nowatchdog
+
+alpine_low_resource_disable_ipv6: false
+alpine_low_resource_ipv6_kernel_option: ipv6.disable=1
+
+alpine_low_resource_blacklist_modules:
+  - drm
+  - drm_kms_helper
+  - simpledrm
+  - virtio_gpu
+  - fb
+  - floppy
+  - cdrom
+  - sr_mod
+  - isofs
+  - hid
+  - usbhid
+  - hid_generic
+  - psmouse
+  - mousedev
+  - evdev
+  - button
+  - i2c_core
+  - i2c_smbus
+  - i2c_piix4
+  - kvm
+  - kvm_amd
+  - kvm_intel
+
+alpine_low_resource_hard_block_modules:
+  - drm
+  - drm_kms_helper
+  - simpledrm
+  - fb
+
+alpine_low_resource_remove_cloud_init: false
+alpine_low_resource_remove_packages:
+  - chrony
+  - chrony-openrc
+  - mtools
+  - numactl
+  - nvme-cli
+  - partx
+  - syslinux
+
+alpine_low_resource_remove_openssh_server: false
+alpine_low_resource_openssh_server_packages:
+  - openssh
+  - openssh-server
+  - openssh-server-common
+  - openssh-server-common-openrc
+  - openssh-sftp-server
+
+alpine_low_resource_keep_packages:
+  - apk-tools
+  - busybox
+  - ca-certificates
+  - dhcpcd
+  - dropbear
+  - dropbear-openrc
+  - iproute2
+  - openssh-client
+  - openssh-client-common
+  - openssh-client-default
+  - python3
+  - qemu-guest-agent
+
+alpine_low_resource_enable_ntpd: true
+alpine_low_resource_disable_services:
+  - acpid
+  - chronyd
+
+alpine_low_resource_sysctl:
+  net.core.rmem_default: 32768
+  net.core.wmem_default: 32768
+  net.core.rmem_max: 131072
+  net.core.wmem_max: 131072
+  net.core.netdev_max_backlog: 256
+  net.core.somaxconn: 128
+  net.ipv4.tcp_fin_timeout: 15
+  net.ipv4.tcp_tw_reuse: 1
+  vm.vfs_cache_pressure: 500
+  vm.dirty_background_ratio: 5
+  vm.dirty_ratio: 10
+  kernel.pid_max: 4096
+  kernel.watchdog: 0
+
+alpine_low_resource_enable_bbr: true
+
+alpine_low_resource_enable_zram: true
+alpine_low_resource_zram_size_mb: "{{ (ansible_memtotal_mb / 2) | int }}"
+alpine_low_resource_zram_algorithm: lz4
+alpine_low_resource_zram_priority: 100
+
+alpine_low_resource_enable_swapfile: false
+alpine_low_resource_swapfile_path: /swapfile
+alpine_low_resource_swapfile_size_mb: 512
+alpine_low_resource_swappiness: 10
+
+alpine_low_resource_readahead_device: vda
+alpine_low_resource_readahead_kb: 128
+
+alpine_low_resource_syslog_in_memory: true
+alpine_low_resource_syslog_buffer_kb: 64

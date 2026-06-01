@@ -1,0 +1,28 @@
+---
+alpine_baseline_hostname: "{{ inventory_hostname }}"
+alpine_baseline_timezone: America/Chicago
+alpine_baseline_ssh_server: dropbear
+alpine_baseline_dropbear_options:
+  - -s
+
+alpine_baseline_users:
+  - name: austin
+    groups:
+      - wheel
+    shell: /bin/ash
+    ssh_authorized_keys: []
+
+alpine_baseline_doas_rules:
+  - "permit persist :wheel"
+
+alpine_low_resource_enable_zram: true
+alpine_low_resource_zram_size_mb: "{{ (ansible_memtotal_mb / 2) | int }}"
+alpine_low_resource_zram_algorithm: lz4
+
+alpine_low_resource_enable_swapfile: true
+alpine_low_resource_swapfile_size_mb: 512
+
+alpine_low_resource_remove_cloud_init: true
+alpine_low_resource_remove_openssh_server: false
+alpine_low_resource_manage_bootloader: false
+alpine_low_resource_disable_ipv6: false

@@ -1,0 +1,128 @@
+---
+- name: Validate Alpine baseline target
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Alpine"
+    fail_msg: "alpine_baseline currently supports alpine linux only"
+
+- name: Install baseline packages
+  ansible.builtin.package:
+    name: "{{ alpine_baseline_packages }}"
+    state: present
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ alpine_baseline_hostname }}"
+  when: alpine_baseline_hostname | length > 0
+
+- name: Ensure hostname is present in hosts file
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^127\\.0\\.1\\.1\\s+"
+    line: "127.0.1.1 {{ alpine_baseline_hostname }}"
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  when: alpine_baseline_hostname | length > 0
+
+- name: Set timezone file
+  ansible.builtin.copy:
+    content: "{{ alpine_baseline_timezone }}\n"
+    dest: /etc/timezone
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Set localtime
+  ansible.builtin.copy:
+    remote_src: true
+    src: "/usr/share/zoneinfo/{{ alpine_baseline_timezone }}"
+    dest: /etc/localtime
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Remove tzdata after timezone is configured
+  ansible.builtin.package:
+    name: tzdata
+    state: absent
+  when: alpine_baseline_remove_tzdata_after_timezone | bool
+
+- name: Ensure configured groups exist
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ alpine_baseline_users | map(attribute='groups') | flatten | unique }}"
+
+- name: Ensure configured primary groups exist
+  ansible.builtin.group:
+    name: "{{ item.group | default(item.name) }}"
+    state: present
+  loop: "{{ alpine_baseline_users }}"
+  loop_control:
+    label: "{{ item.group | default(item.name) }}"
+
+- name: Ensure configured users exist
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    group: "{{ item.group | default(item.name) }}"
+    shell: "{{ item.shell | default('/bin/ash') }}"
+    groups: "{{ item.groups | default([]) | join(',') }}"
+    append: true
+    create_home: true
+    state: present
+  loop: "{{ alpine_baseline_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Install authorized keys for configured users
+  ansible.posix.authorized_key:
+    user: "{{ item.0.name }}"
+    key: "{{ item.1 }}"
+    state: present
+  loop: "{{ alpine_baseline_users | subelements('ssh_authorized_keys', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }}"
+
+- name: Read root authorized keys when requested
+  ansible.builtin.slurp:
+    src: /root/.ssh/authorized_keys
+  register: alpine_baseline_root_authorized_keys
+  failed_when: false
+  changed_when: false
+  when: alpine_baseline_copy_root_authorized_keys | bool
+
+- name: Copy root authorized keys to configured users
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ alpine_baseline_root_authorized_keys.content | b64decode }}"
+    state: present
+  loop: "{{ alpine_baseline_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - alpine_baseline_copy_root_authorized_keys | bool
+    - alpine_baseline_root_authorized_keys is defined
+    - not alpine_baseline_root_authorized_keys.failed
+    - alpine_baseline_root_authorized_keys.content | default('') | length > 0
+
+- name: Configure doas rules
+  ansible.builtin.copy:
+    content: "{{ alpine_baseline_doas_rules | join('\n') }}\n"
+    dest: /etc/doas.d/ansible.conf
+    owner: root
+    group: root
+    mode: "0640"
+
+- name: Configure shell profile
+  ansible.builtin.import_tasks: shell.yml
+  when: alpine_baseline_manage_shell_profile | bool
+
+- name: Configure SSH server
+  ansible.builtin.import_tasks: ssh.yml
+  when: alpine_baseline_harden_ssh | bool
+
+- name: Configure unattended upgrades
+  ansible.builtin.import_tasks: unattended_upgrades.yml
+  when: alpine_baseline_enable_unattended_upgrades | bool

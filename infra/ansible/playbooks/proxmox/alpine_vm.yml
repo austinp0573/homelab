@@ -1,0 +1,8 @@
+---
+- name: Provision optimized Alpine Proxmox VMs
+  hosts: alpine_proxmox_vms
+  become: true
+  roles:
+    - alpine_baseline
+    - proxmox_guest
+    - alpine_low_resource

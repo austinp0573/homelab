@@ -1,0 +1,8 @@
+---
+- name: Install module blacklist
+  ansible.builtin.template:
+    src: blacklist-unnecessary.conf.j2
+    dest: /etc/modprobe.d/blacklist-unnecessary.conf
+    owner: root
+    group: root
+    mode: "0644"

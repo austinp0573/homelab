@@ -1,0 +1,28 @@
+---
+- name: Require supported Alpine SSH server
+  ansible.builtin.assert:
+    that:
+      - alpine_baseline_ssh_server in ["dropbear"]
+    fail_msg: "alpine_baseline_ssh_server currently supports dropbear only"
+
+- name: Configure Dropbear options
+  ansible.builtin.lineinfile:
+    path: "{{ alpine_baseline_dropbear_config_path }}"
+    regexp: "^DROPBEAR_OPTS="
+    line: 'DROPBEAR_OPTS="{{ alpine_baseline_dropbear_options | join(" ") }}"'
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart dropbear
+
+- name: Enable Dropbear at boot
+  ansible.builtin.service:
+    name: dropbear
+    enabled: true
+
+- name: Disable OpenSSH server at boot when present
+  ansible.builtin.service:
+    name: sshd
+    enabled: false
+  failed_when: false

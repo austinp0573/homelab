@@ -1,0 +1,34 @@
+---
+alpine_baseline_hostname: ""
+alpine_baseline_timezone: UTC
+
+alpine_baseline_packages:
+  - ca-certificates
+  - curl
+  - doas
+  - dropbear
+  - dropbear-openrc
+  - fastfetch
+  - less
+  - openssh-client-default
+  - python3
+  - shadow
+  - tzdata
+
+alpine_baseline_remove_tzdata_after_timezone: true
+
+alpine_baseline_users: []
+alpine_baseline_doas_rules:
+  - "permit persist :wheel"
+
+alpine_baseline_copy_root_authorized_keys: false
+alpine_baseline_harden_ssh: true
+alpine_baseline_ssh_server: dropbear
+alpine_baseline_dropbear_config_path: /etc/conf.d/dropbear
+alpine_baseline_dropbear_options:
+  - -s
+
+alpine_baseline_enable_unattended_upgrades: true
+alpine_baseline_unattended_upgrade_path: /etc/periodic/daily/unattended-upgrades
+
+alpine_baseline_manage_shell_profile: true

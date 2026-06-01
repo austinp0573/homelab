@@ -1,0 +1,27 @@
+---
+- name: Build sysctl map
+  ansible.builtin.set_fact:
+    alpine_low_resource_effective_sysctl: >-
+      {{
+        alpine_low_resource_sysctl
+        | combine(
+            {'net.core.default_qdisc': 'fq', 'net.ipv4.tcp_congestion_control': 'bbr'}
+            if alpine_low_resource_enable_bbr | bool else {}
+          )
+        | combine(
+            {
+              'net.ipv6.conf.all.disable_ipv6': 1,
+              'net.ipv6.conf.default.disable_ipv6': 1
+            }
+            if alpine_low_resource_disable_ipv6 | bool else {}
+          )
+      }}
+
+- name: Install low-resource sysctl settings
+  ansible.builtin.template:
+    src: 99-low-resource.conf.j2
+    dest: /etc/sysctl.d/99-low-resource.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply low-resource sysctl

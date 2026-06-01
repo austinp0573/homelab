@@ -1,0 +1,56 @@
+---
+- name: Stop services selected for cleanup
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: stopped
+  loop: "{{ alpine_low_resource_disable_services }}"
+  failed_when: false
+
+- name: Disable services selected for cleanup
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: false
+  loop: "{{ alpine_low_resource_disable_services }}"
+  failed_when: false
+
+- name: Enable busybox ntpd
+  ansible.builtin.service:
+    name: ntpd
+    enabled: true
+    state: started
+  when: alpine_low_resource_enable_ntpd | bool
+
+- name: Build package cleanup list
+  ansible.builtin.set_fact:
+    alpine_low_resource_effective_remove_packages: >-
+      {{
+        alpine_low_resource_remove_packages
+        + (['cloud-init', 'cloud-utils'] if alpine_low_resource_remove_cloud_init | bool else [])
+        + (alpine_low_resource_openssh_server_packages if alpine_low_resource_remove_openssh_server | bool else [])
+      }}
+
+- name: Remove unneeded packages
+  ansible.builtin.package:
+    name: "{{ alpine_low_resource_effective_remove_packages }}"
+    state: absent
+  when: alpine_low_resource_effective_remove_packages | length > 0
+
+- name: Clean apk cache
+  ansible.builtin.file:
+    path: /var/cache/apk
+    state: absent
+
+- name: Recreate apk cache directory
+  ansible.builtin.file:
+    path: /var/cache/apk
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure syslog memory buffer
+  ansible.builtin.lineinfile:
+    path: /etc/conf.d/syslog
+    regexp: '^SYSLOGD_OPTS='
+    line: 'SYSLOGD_OPTS="-t -C{{ alpine_low_resource_syslog_buffer_kb }}"'
+  when: alpine_low_resource_syslog_in_memory | bool
