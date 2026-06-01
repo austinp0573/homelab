@@ -1,9 +1,6 @@
 ---
-- name: Validate Alpine baseline target
-  ansible.builtin.assert:
-    that:
-      - ansible_distribution == "Alpine"
-    fail_msg: "alpine_baseline currently supports alpine linux only"
+- name: Validate Alpine baseline inputs
+  ansible.builtin.import_tasks: validate.yml
 
 - name: Install baseline packages
   ansible.builtin.package:

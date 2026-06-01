@@ -1,9 +1,6 @@
 ---
-- name: Validate Proxmox guest target
-  ansible.builtin.assert:
-    that:
-      - ansible_distribution == "Alpine"
-    fail_msg: "proxmox_guest currently supports alpine linux only"
+- name: Validate Proxmox guest inputs
+  ansible.builtin.import_tasks: validate.yml
 
 - name: Install Proxmox guest packages
   ansible.builtin.package:

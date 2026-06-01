@@ -1,15 +1,6 @@
 ---
-- name: Validate low-resource Alpine target
-  ansible.builtin.assert:
-    that:
-      - ansible_distribution == "Alpine"
-    fail_msg: "alpine_low_resource currently supports alpine linux only"
-
-- name: Validate protected packages are not removed
-  ansible.builtin.assert:
-    that:
-      - (alpine_low_resource_remove_packages | intersect(alpine_low_resource_keep_packages)) | length == 0
-    fail_msg: "alpine_low_resource_remove_packages includes protected packages"
+- name: Validate low-resource Alpine inputs
+  ansible.builtin.import_tasks: validate.yml
 
 - name: Configure kernel module blacklist
   ansible.builtin.import_tasks: modules.yml
