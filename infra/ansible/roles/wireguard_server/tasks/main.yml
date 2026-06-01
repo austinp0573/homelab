@@ -1,0 +1,18 @@
+---
+- name: Validate WireGuard inputs
+  ansible.builtin.import_tasks: validate.yml
+
+- name: Configure Alpine package dependencies
+  ansible.builtin.import_tasks: alpine.yml
+
+- name: Configure kernel forwarding
+  ansible.builtin.import_tasks: sysctl.yml
+
+- name: Configure WireGuard
+  ansible.builtin.import_tasks: wireguard.yml
+
+- name: Configure nftables
+  ansible.builtin.import_tasks: nftables.yml
+
+- name: Configure services
+  ansible.builtin.import_tasks: services.yml

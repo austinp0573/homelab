@@ -1,0 +1,35 @@
+---
+# ansible_port is the public port you connect to.
+# wireguard_ssh_listen_port is the port ssh listens on inside the server.
+wireguard_ssh_listen_port: 22
+
+wireguard_private_key: "replace-with-server-private-key"
+wireguard_public_key: "replace-with-server-public-key"
+wireguard_interface: wg0
+wireguard_address: "10.44.0.1/24"
+wireguard_listen_port: 51820
+
+# these are metadata for operators and client config notes.
+# the role does not currently configure them on the server.
+wireguard_public_endpoint: "vpn.example.com:51820"
+wireguard_public_endpoint_host: vpn.example.com
+wireguard_public_endpoint_port: 51820
+wireguard_public_endpoint_ip: "203.0.113.10"
+
+wireguard_ssh_allowed_cidrs:
+  - "0.0.0.0/0"
+wireguard_udp_allowed_cidrs:
+  - "0.0.0.0/0"
+
+wireguard_peers:
+  - name: admin-laptop
+    ip: "10.44.0.2"
+    public_key: "replace-with-admin-laptop-public-key"
+    can_talk_to:
+      - "10.44.0.0/24"
+
+  - name: restricted-client
+    ip: "10.44.0.3"
+    public_key: "replace-with-restricted-client-public-key"
+    can_talk_to:
+      - "10.44.0.2/32"

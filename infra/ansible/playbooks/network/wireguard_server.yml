@@ -1,0 +1,27 @@
+---
+- name: Provision WireGuard servers
+  hosts: wireguard_servers
+  gather_facts: false
+  become: true
+  pre_tasks:
+    - name: Ensure Python is available for Ansible
+      ansible.builtin.raw: |
+        if [ ! -f /etc/alpine-release ]; then
+            echo "unsupported operating system: expected alpine linux" >&2
+            exit 1
+        fi
+
+        if command -v python3 >/dev/null 2>&1; then
+            echo "python present"
+        else
+            apk add --no-cache python3
+            echo "python installed"
+        fi
+      register: wireguard_python_bootstrap
+      changed_when: "'python installed' in wireguard_python_bootstrap.stdout"
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+  roles:
+    - wireguard_server

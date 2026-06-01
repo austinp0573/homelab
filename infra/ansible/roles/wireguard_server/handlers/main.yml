@@ -1,0 +1,16 @@
+---
+- name: Restart wireguard
+  ansible.builtin.service:
+    name: "{{ wireguard_service_name }}"
+    state: restarted
+
+- name: Validate nftables configuration
+  ansible.builtin.command:
+    cmd: "nft --check --file {{ wireguard_nftables_config_path }}"
+  changed_when: false
+  listen: Reload nftables
+
+- name: Apply nftables configuration
+  ansible.builtin.command:
+    cmd: "nft --file {{ wireguard_nftables_config_path }}"
+  listen: Reload nftables

@@ -1,0 +1,20 @@
+---
+- name: Ensure Alpine repositories for WireGuard packages are present
+  ansible.builtin.lineinfile:
+    path: /etc/apk/repositories
+    line: "{{ item }}"
+    state: present
+    create: true
+    mode: "0644"
+  loop: "{{ wireguard_apk_repositories }}"
+  when: wireguard_manage_apk_repositories | bool
+
+- name: Update Alpine package cache
+  ansible.builtin.command:
+    cmd: apk update
+  changed_when: false
+
+- name: Install WireGuard and firewall dependencies
+  ansible.builtin.package:
+    name: "{{ wireguard_packages }}"
+    state: present
