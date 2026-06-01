@@ -1,0 +1,5 @@
+---
+# keep real values in an ignored vars file or ansible vault.
+austin_user_password: "replace-with-vault-value"
+ansible_user_ssh_pub_key: "ssh-ed25519 replace-with-ansible-public-key"
+austin_user_ssh_pub_key: "ssh-ed25519 replace-with-austin-public-key"

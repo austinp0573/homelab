@@ -1,6 +1,17 @@
 ---
 all:
   children:
+    debian_bootstrap_targets:
+      hosts:
+        debian-host-01:
+          ansible_host: 192.0.2.20
+          ansible_user: root
+    debian_hosts:
+      hosts:
+        debian-host-01:
+          ansible_host: 192.0.2.20
+          ansible_user: ansible
+          ansible_become: true
     alpine_proxmox_vms:
       hosts:
         alpine-vm-01:

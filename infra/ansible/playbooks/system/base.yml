@@ -1,0 +1,6 @@
+---
+- name: Apply Debian-family base configuration
+  hosts: debian_hosts
+  become: true
+  roles:
+    - base
