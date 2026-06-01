@@ -1,0 +1,15 @@
+---
+- name: Require Alpine Linux
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Alpine"
+    fail_msg: "proxmox_guest currently supports alpine linux only"
+
+- name: Require valid Proxmox guest settings
+  ansible.builtin.assert:
+    that:
+      - proxmox_guest_packages is sequence
+      - proxmox_guest_packages is not string
+      - proxmox_guest_services is sequence
+      - proxmox_guest_services is not string
+    fail_msg: "proxmox_guest package and service variables must be lists"

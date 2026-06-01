@@ -1,0 +1,39 @@
+---
+- name: Require Alpine Linux
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Alpine"
+    fail_msg: "alpine_low_resource currently supports alpine linux only"
+
+- name: Build candidate package cleanup list
+  ansible.builtin.set_fact:
+    alpine_low_resource_candidate_remove_packages: >-
+      {{
+        alpine_low_resource_remove_packages
+        + (['cloud-init', 'cloud-utils'] if alpine_low_resource_remove_cloud_init | bool else [])
+        + (alpine_low_resource_openssh_server_packages if alpine_low_resource_remove_openssh_server | bool else [])
+      }}
+
+- name: Require valid low-resource settings
+  ansible.builtin.assert:
+    that:
+      - alpine_low_resource_blacklist_modules is sequence
+      - alpine_low_resource_blacklist_modules is not string
+      - alpine_low_resource_hard_block_modules is sequence
+      - alpine_low_resource_hard_block_modules is not string
+      - alpine_low_resource_remove_packages is sequence
+      - alpine_low_resource_remove_packages is not string
+      - alpine_low_resource_keep_packages is sequence
+      - alpine_low_resource_keep_packages is not string
+      - alpine_low_resource_disable_services is sequence
+      - alpine_low_resource_disable_services is not string
+      - alpine_low_resource_sysctl is mapping
+      - alpine_low_resource_zram_size_mb | int > 0
+      - alpine_low_resource_zram_priority | int >= 0
+      - alpine_low_resource_swapfile_size_mb | int > 0
+      - alpine_low_resource_swappiness | int >= 0
+      - alpine_low_resource_swappiness | int <= 200
+      - alpine_low_resource_readahead_kb | int >= 0
+      - alpine_low_resource_syslog_buffer_kb | int > 0
+      - (alpine_low_resource_candidate_remove_packages | intersect(alpine_low_resource_keep_packages)) | length == 0
+    fail_msg: "alpine_low_resource variables must be valid and must not remove protected packages"

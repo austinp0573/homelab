@@ -1,0 +1,33 @@
+---
+- name: Require Alpine Linux
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Alpine"
+    fail_msg: "alpine_baseline currently supports alpine linux only"
+
+- name: Require valid baseline settings
+  ansible.builtin.assert:
+    that:
+      - alpine_baseline_packages is sequence
+      - alpine_baseline_packages is not string
+      - alpine_baseline_users is sequence
+      - alpine_baseline_users is not string
+      - alpine_baseline_doas_rules is sequence
+      - alpine_baseline_doas_rules is not string
+      - alpine_baseline_dropbear_options is sequence
+      - alpine_baseline_dropbear_options is not string
+      - alpine_baseline_timezone | length > 0
+      - alpine_baseline_ssh_server == "dropbear"
+    fail_msg: "alpine_baseline variables must use valid list and string values"
+
+- name: Require valid baseline users
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name is match('^[a-z_][a-z0-9_-]*[$]?$')
+      - item.groups is not defined or (item.groups is sequence and item.groups is not string)
+      - item.ssh_authorized_keys is not defined or (item.ssh_authorized_keys is sequence and item.ssh_authorized_keys is not string)
+    fail_msg: "each alpine_baseline_users entry must include a valid name and list values"
+  loop: "{{ alpine_baseline_users }}"
+  loop_control:
+    label: "{{ item.name | default('unnamed-user') }}"
