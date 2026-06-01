@@ -1,0 +1,107 @@
+---
+- name: Clear static motd
+  ansible.builtin.copy:
+    content: ""
+    dest: /etc/motd
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install global aliases
+  ansible.builtin.copy:
+    dest: /etc/profile.d/10-aliases.sh
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      alias ls='ls --color=auto'
+      alias l='ls --color=auto -Alrth'
+      alias df='df -h'
+      alias free='free -h'
+      alias top='top -d 1'
+
+      c() {
+          curl -s "cht.sh/$1"
+      }
+
+- name: Install ash prompt
+  ansible.builtin.copy:
+    dest: /etc/profile.d/20-prompt.sh
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      if [ "$(id -u)" -eq 0 ]; then
+          export PS1='${USER:-root}@${HOSTNAME%%.*}:${PWD}# '
+      else
+          export PS1='${USER}@${HOSTNAME%%.*}:${PWD}$ '
+      fi
+
+- name: Install login welcome
+  ansible.builtin.copy:
+    dest: /etc/profile.d/30-welcome.sh
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      if [ -t 1 ] && command -v fastfetch >/dev/null 2>&1; then
+          echo ""
+          fastfetch
+          echo ""
+      fi
+
+      if [ -s /etc/motd ]; then
+          cat /etc/motd
+      fi
+
+- name: Configure root profile
+  ansible.builtin.copy:
+    dest: /root/.profile
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      export EDITOR=vi
+      export PAGER=less
+
+      alias shutdown='halt'
+
+- name: Configure root ashrc
+  ansible.builtin.copy:
+    dest: /root/.ashrc
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [ -f /etc/profile.d/10-aliases.sh ] && . /etc/profile.d/10-aliases.sh
+      alias shutdown='halt'
+
+- name: Configure user profiles
+  ansible.builtin.copy:
+    dest: "/home/{{ item.name }}/.profile"
+    owner: "{{ item.name }}"
+    group: "{{ item.group | default(item.name) }}"
+    mode: "0644"
+    content: |
+      export EDITOR=vi
+      export PAGER=less
+
+      if [ -d "$HOME/bin" ]; then
+          export PATH="$HOME/bin:$PATH"
+      fi
+  loop: "{{ alpine_baseline_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Configure user ashrc
+  ansible.builtin.copy:
+    dest: "/home/{{ item.name }}/.ashrc"
+    owner: "{{ item.name }}"
+    group: "{{ item.group | default(item.name) }}"
+    mode: "0644"
+    content: |
+      [ -f /etc/profile.d/10-aliases.sh ] && . /etc/profile.d/10-aliases.sh
+  loop: "{{ alpine_baseline_users }}"
+  loop_control:
+    label: "{{ item.name }}"

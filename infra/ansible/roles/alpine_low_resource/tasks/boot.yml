@@ -1,0 +1,35 @@
+---
+- name: Configure mkinitfs features
+  ansible.builtin.lineinfile:
+    path: /etc/mkinitfs/mkinitfs.conf
+    regexp: "^features="
+    line: 'features="{{ alpine_low_resource_mkinitfs_features }}"'
+  notify: Rebuild initramfs
+
+- name: Build requested kernel option list
+  ansible.builtin.set_fact:
+    alpine_low_resource_effective_kernel_options: >-
+      {{
+        alpine_low_resource_kernel_options
+        + ([alpine_low_resource_ipv6_kernel_option] if alpine_low_resource_disable_ipv6 | bool else [])
+      }}
+
+- name: Ensure kernel options are present
+  ansible.builtin.shell: |
+    set -eu
+    changed=0
+    for opt in {{ alpine_low_resource_effective_kernel_options | map('quote') | join(' ') }}; do
+        if ! grep -q "default_kernel_opts=.*${opt}" /etc/update-extlinux.conf; then
+            sed -i "s/default_kernel_opts=\"/default_kernel_opts=\"${opt} /" /etc/update-extlinux.conf
+            changed=1
+        fi
+        if ! grep -q " ${opt}\|=${opt}" /boot/extlinux.conf; then
+            sed -i "s/ quiet/ quiet ${opt}/" /boot/extlinux.conf
+            changed=1
+        fi
+    done
+    echo "$changed"
+  args:
+    executable: /bin/sh
+  register: alpine_low_resource_kernel_opts
+  changed_when: alpine_low_resource_kernel_opts.stdout | trim == "1"

@@ -1,0 +1,51 @@
+---
+- name: Check swapfile
+  ansible.builtin.stat:
+    path: "{{ alpine_low_resource_swapfile_path }}"
+  register: alpine_low_resource_swapfile
+
+- name: Create swapfile
+  ansible.builtin.command:
+    cmd: "dd if=/dev/zero of={{ alpine_low_resource_swapfile_path }} bs=1M count={{ alpine_low_resource_swapfile_size_mb }}"
+  when: not alpine_low_resource_swapfile.stat.exists
+
+- name: Set swapfile permissions
+  ansible.builtin.file:
+    path: "{{ alpine_low_resource_swapfile_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Format swapfile
+  ansible.builtin.command:
+    cmd: "mkswap {{ alpine_low_resource_swapfile_path }}"
+  when: not alpine_low_resource_swapfile.stat.exists
+
+- name: Enable swapfile in fstab
+  ansible.builtin.mount:
+    name: none
+    src: "{{ alpine_low_resource_swapfile_path }}"
+    fstype: swap
+    opts: sw
+    dump: "0"
+    passno: "0"
+    state: present
+
+- name: Enable swapfile now
+  ansible.builtin.command:
+    cmd: "swapon {{ alpine_low_resource_swapfile_path }}"
+  register: alpine_low_resource_swapon
+  changed_when: alpine_low_resource_swapon.rc == 0
+  failed_when:
+    - alpine_low_resource_swapon.rc != 0
+    - "'Device or resource busy' not in alpine_low_resource_swapon.stderr"
+
+- name: Configure swappiness
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/98-swap.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      vm.swappiness = {{ alpine_low_resource_swappiness }}
+  notify: Apply swap sysctl

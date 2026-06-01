@@ -1,0 +1,27 @@
+---
+- name: Install zram support
+  ansible.builtin.package:
+    name: zram-init
+    state: present
+
+- name: Configure zram
+  ansible.builtin.copy:
+    dest: /etc/conf.d/zram-init
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      load_on_start="yes"
+      unload_on_stop="yes"
+      num_devices="1"
+      type0="swap"
+      size0="{{ alpine_low_resource_zram_size_mb }}"
+      algo0="{{ alpine_low_resource_zram_algorithm }}"
+      priority0="{{ alpine_low_resource_zram_priority }}"
+  notify: Restart zram
+
+- name: Enable zram
+  ansible.builtin.service:
+    name: zram-init
+    enabled: true
+    state: started

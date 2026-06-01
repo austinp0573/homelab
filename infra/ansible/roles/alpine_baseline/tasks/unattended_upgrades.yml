@@ -1,0 +1,28 @@
+---
+- name: Install unattended apk upgrade script
+  ansible.builtin.copy:
+    dest: "{{ alpine_baseline_unattended_upgrade_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+    content: |
+      #!/bin/sh
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+      if apk upgrade -U -a -q; then
+          if apk version -l '<' | grep -E -q "linux-|musl|openssl|zlib"; then
+              printf "\n\033[1;31m[!] system updates require a reboot to take effect.\033[0m\n\n" > /etc/motd
+          else
+              > /etc/motd
+          fi
+          apk cache clean
+      else
+          printf "%s: error - alpine upgrade failed\n" "$(date)" >&2
+          exit 1
+      fi
+
+- name: Enable crond
+  ansible.builtin.service:
+    name: crond
+    enabled: true
+    state: started

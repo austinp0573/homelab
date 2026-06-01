@@ -1,0 +1,9 @@
+---
+all:
+  children:
+    alpine_proxmox_vms:
+      hosts:
+        alpine-vm-01:
+          ansible_host: 192.0.2.10
+          ansible_user: ansible
+          ansible_become: true

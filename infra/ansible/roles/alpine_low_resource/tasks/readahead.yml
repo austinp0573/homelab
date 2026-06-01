@@ -1,0 +1,24 @@
+---
+- name: Set read-ahead now when device exists
+  ansible.builtin.copy:
+    content: "{{ alpine_low_resource_readahead_kb }}\n"
+    dest: "/sys/block/{{ alpine_low_resource_readahead_device }}/queue/read_ahead_kb"
+  failed_when: false
+  changed_when: false
+
+- name: Persist read-ahead setting
+  ansible.builtin.copy:
+    dest: /etc/local.d/readahead.start
+    owner: root
+    group: root
+    mode: "0755"
+    content: |
+      #!/bin/sh
+      if [ -w /sys/block/{{ alpine_low_resource_readahead_device }}/queue/read_ahead_kb ]; then
+          echo {{ alpine_low_resource_readahead_kb }} > /sys/block/{{ alpine_low_resource_readahead_device }}/queue/read_ahead_kb
+      fi
+
+- name: Enable local service
+  ansible.builtin.service:
+    name: local
+    enabled: true

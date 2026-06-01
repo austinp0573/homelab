@@ -1,0 +1,7 @@
+---
+proxmox_guest_packages:
+  - qemu-guest-agent
+  - qemu-guest-agent-openrc
+
+proxmox_guest_services:
+  - qemu-guest-agent

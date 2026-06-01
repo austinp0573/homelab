@@ -1,0 +1,5 @@
+# managed by ansible
+
+{% for key, value in alpine_low_resource_effective_sysctl | dictsort %}
+{{ key }} = {{ value }}
+{% endfor %}

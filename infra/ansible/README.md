@@ -1,0 +1,37 @@
+# homelab ansible
+
+This directory is the working Ansible repo for homelab and small VPS systems.
+
+The repo is organized around small playbooks and reusable roles. Environment-specific inventories live under `inventories/`, while shared behavior lives under `roles/`.
+
+## layout
+
+```text
+inventories/
+  homelab/
+    hosts.example.yml
+    hosts.yml
+playbooks/
+  proxmox/
+    alpine_vm.yml
+roles/
+  alpine_baseline/
+  alpine_low_resource/
+  proxmox_guest/
+```
+
+`hosts.yml` is for local inventory data and should stay out of git. Start from the example inventory and keep hostnames, addresses, keys, and private values local or in an encrypted vault.
+
+## alpine proxmox vm
+
+The first focused playbook is for an Alpine Linux VM on Proxmox after cloud-init has completed the initial bootstrap.
+
+```sh
+ansible-playbook playbooks/proxmox/alpine_vm.yml
+```
+
+Cloud-init should get the host reachable and install enough base tooling for Ansible, including Python. After that, this playbook owns the desired state: users, doas, shell profile, packages, Dropbear, Proxmox guest agent, low-resource tuning, swap/zram, and cleanup.
+
+Alpine hosts use Dropbear as the managed SSH server. The baseline role still installs the OpenSSH SCP client package so legacy SCP transfers work against Dropbear, and `ansible.cfg` forces legacy SCP mode with `scp_extra_args = -O`.
+
+The low-resource role keeps Python, apk, certificates, Dropbear, the OpenSSH client/SCP bits, networking, and qemu guest agent by default. More aggressive behavior is controlled by variables.

@@ -26,6 +26,9 @@ hosts.yml
 .venv/
 pve-post-install.sh
 group_vars/
+!infra/ansible/inventories/
+!infra/ansible/inventories/**/
+!infra/ansible/inventories/**/*.example.yml
 *pve_init*
 traccar/
 PXL*
@@ -33,3 +36,5 @@ pve*.webp
 scripts/proxmox/setup_webserver.sh
 alpine-vm-nginx/
 speedtest-go/
+scripts-ansible-reference/
+scratch/

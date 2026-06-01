@@ -1,0 +1,18 @@
+---
+- name: Validate Proxmox guest target
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Alpine"
+    fail_msg: "proxmox_guest currently supports alpine linux only"
+
+- name: Install Proxmox guest packages
+  ansible.builtin.package:
+    name: "{{ proxmox_guest_packages }}"
+    state: present
+
+- name: Enable Proxmox guest services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop: "{{ proxmox_guest_services }}"

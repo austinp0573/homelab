@@ -1,0 +1,6 @@
+---
+- name: Restart dropbear
+  ansible.builtin.service:
+    name: dropbear
+    state: restarted
+  failed_when: false

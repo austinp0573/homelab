@@ -1,0 +1,36 @@
+---
+- name: Validate low-resource Alpine target
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Alpine"
+    fail_msg: "alpine_low_resource currently supports alpine linux only"
+
+- name: Validate protected packages are not removed
+  ansible.builtin.assert:
+    that:
+      - (alpine_low_resource_remove_packages | intersect(alpine_low_resource_keep_packages)) | length == 0
+    fail_msg: "alpine_low_resource_remove_packages includes protected packages"
+
+- name: Configure kernel module blacklist
+  ansible.builtin.import_tasks: modules.yml
+
+- name: Configure boot and initramfs settings
+  ansible.builtin.import_tasks: boot.yml
+  when: alpine_low_resource_manage_bootloader | bool
+
+- name: Configure package and service cleanup
+  ansible.builtin.import_tasks: cleanup.yml
+
+- name: Configure sysctl tuning
+  ansible.builtin.import_tasks: sysctl.yml
+
+- name: Configure zram
+  ansible.builtin.import_tasks: zram.yml
+  when: alpine_low_resource_enable_zram | bool
+
+- name: Configure swapfile
+  ansible.builtin.import_tasks: swapfile.yml
+  when: alpine_low_resource_enable_swapfile | bool
+
+- name: Configure disk read-ahead
+  ansible.builtin.import_tasks: readahead.yml

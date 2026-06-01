@@ -1,0 +1,8 @@
+# managed by ansible
+
+{% for module in alpine_low_resource_blacklist_modules %}
+blacklist {{ module }}
+{% endfor %}
+{% for module in alpine_low_resource_hard_block_modules %}
+install {{ module }} /bin/true
+{% endfor %}
