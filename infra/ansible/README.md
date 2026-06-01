@@ -20,6 +20,7 @@ playbooks/
   proxmox/
     alpine_vm.yml
   system/
+    README.md
     base.yml
     bootstrap.yml
 roles/
@@ -72,4 +73,4 @@ ansible-playbook playbooks/system/bootstrap.yml
 ansible-playbook playbooks/system/base.yml
 ```
 
-Use `debian_bootstrap_targets` for first-run bootstrap and `debian_hosts` for steady-state base configuration. The older root-level `site.yml` and original playbooks remain for compatibility while the repo is being reorganized.
+Use `debian_bootstrap_targets` for first-run bootstrap and `debian_hosts` for steady-state base configuration. The older root-level `site.yml` and original playbooks remain for compatibility while the repo is being reorganized. The `base` and `bootstrap` role task files are intentionally preserved as-is.
