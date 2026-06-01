@@ -34,6 +34,12 @@ roles/
 
 `hosts.yml` is for local inventory data and should stay out of git. start from the examples and keep private values in ignored vars or an encrypted vault.
 
+Install collection dependencies before running playbooks on a fresh control machine:
+
+```sh
+ansible-galaxy collection install -r collections/requirements.yml
+```
+
 ## alpine proxmox vm
 
 The first focused playbook is for an Alpine Linux VM on Proxmox after cloud-init has completed the initial bootstrap.

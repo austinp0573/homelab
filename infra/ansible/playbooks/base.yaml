@@ -1,3 +1,7 @@
+---
+# legacy debian base entry point pinned to sbc-01.
+# playbooks/system/base.yml for new work.
+
 - name: Apply base role to target hosts
   hosts: sbc-01
   become: yes

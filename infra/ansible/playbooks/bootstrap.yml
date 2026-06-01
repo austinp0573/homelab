@@ -1,9 +1,7 @@
 ---
-# This playbook should be run ONCE against a new server to bootstrap it.
-# Usage: 
-# ansible-playbook -i inventory/hosts.yml bootstrap.yml -u root --ask-pass
-# OR if you are connecting with an existing user like 'ubuntu' with sudo:
-# ansible-playbook -i inventory/hosts.yml bootstrap.yml -u ubuntu -K
+# legacy debian bootstrap entry point.
+# playbooks/system/bootstrap.yml for new work.
+# run once against a new debian-family server.
 
 - name: Bootstrap Ansible Service Account
   hosts: all
