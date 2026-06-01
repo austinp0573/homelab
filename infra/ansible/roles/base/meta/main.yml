@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  role_name: base
+  description: Debian-family base host configuration
+  author: austin
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+dependencies: []
