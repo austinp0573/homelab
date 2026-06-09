@@ -1,6 +1,6 @@
 # base
 
-Applies the older Debian-family base configuration.
+Applies the older debian-based distro base configuration.
 
 ## scope
 

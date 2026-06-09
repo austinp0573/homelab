@@ -38,3 +38,6 @@ alpine-vm-nginx/
 speedtest-go/
 scripts-ansible-reference/
 scratch/
+server.yml
+adguard-home/
+docs/services/truenas/*

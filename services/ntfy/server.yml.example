@@ -1,0 +1,33 @@
+# Server
+base-url: "https://ntfy.example.com"
+behind-proxy: true
+
+# Access control
+auth-file: "/var/lib/ntfy/auth.db"
+auth-default-access: "deny-all"
+auth-users:
+  - "ntfyadmin:$2b$10$dsn88tHNdXp8Y.IPxZWbI.5Ioly3jucxLG.Ql5d8ts/yBlA4Hcgaq:admin"
+  - "ntfyuser:$2b$10$nslHr3Y3TPN4mFSAzZkYJeOQnlIK4db34Lh7jHb1GoqKiuIrgeMHm:user"
+enable-login: true
+require-login: true
+
+# Attachments
+attachment-cache-dir: "/var/cache/ntfy/attachments"
+
+# Message cache
+cache-file: "/var/cache/ntfy/cache.db"
+
+# Web push
+web-push-public-key: "BODmQ3myWcjJ1zSvy3KZ7d1rcYAvyt-LIqv2oJ2OO-C9CR4SSyvX-HtUZZ1rOM0N3MJOuu51UFSfo_pA8C6TfbA"
+web-push-private-key: "CR4SSyvX-HtUZZ1rOM0N3MJOuu51UFSfo_pA8C6TfbA"
+web-push-file: "/var/lib/ntfy/webpush.db"
+web-push-email-address: "admin@example.com"
+
+# Email notifications (outgoing)
+smtp-sender-addr: "smtp.example.com:587"
+smtp-sender-from: "ntfy@example.com"
+smtp-sender-user: "yoursmtpuser"
+smtp-sender-pass: "yoursmtppass"
+
+# Upstream
+upstream-base-url: "https://ntfy.sh"
