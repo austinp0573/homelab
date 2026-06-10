@@ -6,7 +6,7 @@ services/rackpeek/data/config.yaml
 .history/
 **/*.env
 vault.yml
-power*
+power
 docker/
 nut_client/
 nut_server/
@@ -41,3 +41,4 @@ scratch/
 server.yml
 adguard-home/
 docs/services/truenas/*
+scripts/legacy/
