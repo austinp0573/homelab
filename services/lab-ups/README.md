@@ -101,6 +101,12 @@ sudo NUT_SERVER=<nanopi-ip> \
      ./scripts/setup-nut-client.sh
 ```
 
+or by placing `setup-nut-client.sh` and `.env` on a host and running:
+
+```bash
+sudo bash -c 'set -a; source .env; exec ./setup-nut-client.sh'
+```
+
 The `NUT_FINAL_DELAY` value here must be longer than `KILLPOWER_DELAY` in `.env` and longer than the FINALDELAY of any other NUT client on the network. The NanoPi needs to still be running when restore-watcher sends killpower.
 
 **9.** Set up the shutdown user on each host that UpSnap will shut down over SSH. Run this on each target host:
@@ -108,6 +114,12 @@ The `NUT_FINAL_DELAY` value here must be longer than `KILLPOWER_DELAY` in `.env`
 ```sh
 sudo UPSNAP_PUBLIC_KEY='<contents of upsnap_shutdown_key.pub>' \
      ./scripts/setup-upsnap-shutdown-user.sh
+```
+
+- or by placing `setup-upsnap-shutdown-user.sh` and `.env` on a host and running:
+
+```bash
+sudo bash -c 'set -a; source .env; exec ./setup-upsnap-shutdown-user.sh'
 ```
 
 This creates the `upsnap-shutdown` system user, installs the public key, and drops a sudoers entry so the user can run `/sbin/shutdown -h now` without a password.
@@ -156,7 +168,3 @@ docker compose exec restore-watcher upsc "$UPS_NAME@nutify:3493"
 - `upsnap-data/ssh/` — SSH key written by upsnap-ssh-init
 - `upsnap-data` (Docker volume) — UpSnap PocketBase database
 - `restore-state/` — `shutdown-expected.json` flag file, persists across container restarts
-
-&nbsp;
-
-**466f724a616e6574**
