@@ -42,3 +42,4 @@ server.yml
 adguard-home/
 docs/services/truenas/*
 scripts/legacy/
+*env/
