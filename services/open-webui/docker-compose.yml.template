@@ -1,0 +1,24 @@
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      # Disable the internal Ollama service checks since you use a custom backend
+      - ENABLE_OLLAMA_API=False
+      
+      # Map Open WebUI to your server's existing OpenAI translation layer
+      - OPENAI_API_BASE_URLS=http://${LOCAL_LLM_API}/v1
+      - OPENAI_API_KEYS=local-token-not-needed
+      
+      # Optional: Security adjustments for homelab LAN access
+      - WEBUI_AUTH=False # Set to False if you want to skip the login screen entirely
+      - ENABLE_SIGNUP=True # Allow creating your initial admin account on first load
+
+volumes:
+  open-webui-data:
+    name: open_webui_data
