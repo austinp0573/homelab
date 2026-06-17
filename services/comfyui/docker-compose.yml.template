@@ -1,0 +1,24 @@
+services:
+  comfyui:
+    image: ${COMFYUI_IMAGE}
+    container_name: comfyui-rocm
+    restart: unless-stopped
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    ipc: host
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    ports:
+      - ${COMFYUI_PORTS}
+    volumes:
+      - /opt/comfyui/data/models:/mnt/models
+    command: >
+      sh -c "rm -rf $$COMFYUI_PATH/models && 
+      ln -s /mnt/models $$COMFYUI_PATH/models && 
+      python $$COMFYUI_PATH/main.py --listen 0.0.0.0 --port 8188"
