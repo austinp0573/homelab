@@ -4,9 +4,6 @@ services:
     ports:
       - "${ACTUAL_HOST_IP}:${ACTUAL_HOST_PORT}:${ACTUAL_CONTAINER_PORT}"
     environment:
-      # Uncomment any of the lines below to set configuration options.
-      # - ACTUAL_HTTPS_KEY=/data/selfhost.key
-      # - ACTUAL_HTTPS_CERT=/data/selfhost.crt
       - ACTUAL_HOSTNAME=${ACTUAL_HOSTNAME}
       - "ACTUAL_PORT=${ACTUAL_CONTAINER_PORT}"
       - ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB=100
@@ -16,20 +13,29 @@ services:
     volumes:
       - /opt/actual-budget/data:/data
     networks:
-      - budget_private
+      - ${ACTUAL_BUDGET_COMPOSE_NET}
     user: "1000:1000"
-    
     healthcheck:
-      # Enable health check for the instance
       test: ['CMD-SHELL', 'node scripts/health-check.js']
-      # health check using self signed certs
-      # test: ['CMD-SHELL', 'NODE_EXTRA_CA_CERTS=/data/selfhost.crt node scripts/health-check.js']
       interval: 60s
       timeout: 10s
       retries: 3
       start_period: 20s
     restart: unless-stopped
 
+  frpc:
+    image: ${FRPC_CONTAINER_IMAGE}
+    container_name: ${FRPC_CONTAINER_NAME}
+    command: ["-c", "/etc/frpc/frpc.toml"]
+    restart: unless-stopped
+    volumes:
+      - ./config/frpc.toml:/etc/frpc/frpc.toml:ro
+    networks:
+      - ${ACTUAL_BUDGET_COMPOSE_NET}
+    depends_on:
+      - actual_server
+
 networks:
-  budget_private:
+  ${ACTUAL_BUDGET_COMPOSE_NET}:
     driver: bridge
+    internal: false
