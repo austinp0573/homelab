@@ -1,0 +1,24 @@
+services:
+  app-service:
+    image: nginx:alpine
+    container_name: stack1-app
+    restart: unless-stopped
+    networks:
+      - stack1_net
+
+  frpc:
+    image: fatedier/frpc:v0.69.1
+    container_name: stack1-frpc
+    command: ["-c", "/etc/frp/frpc.toml"]
+    restart: unless-stopped
+    volumes:
+      - ./config/frpc.toml:/etc/frp/frpc.toml:ro
+    networks:
+      - stack1_net
+    depends_on:
+      - app-service
+
+networks:
+  stack1_net:
+    driver: bridge
+    internal: false

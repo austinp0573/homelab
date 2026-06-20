@@ -1,0 +1,16 @@
+serverAddr = ${FRPS_SERVER_PUBLIC_ENDPOINT}
+serverPort = ${FRPS_BIND_PORT}
+transport.tls.enable = true
+
+[auth]
+method = "token"
+token = ${FRP_SECURE_TOKEN}
+
+[[proxies]]
+name = ${FRP_TUNNEL_NAME}
+type = "http"
+localIP = "127.0.0.1"
+localPort = ${FRPC_LOCAL_PORT}
+customDomains = ${FRPC_CUSTOM_DOMAIN}
+httpUser = ${FRPC_HTTP_USERNAME}
+httpPassword = ${FRPC_HTTP_PASSWD}
