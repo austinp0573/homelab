@@ -154,6 +154,10 @@ lspci -nnk | grep -A3 AMD
 
 You want to see `Kernel driver in use: vfio-pci` for the R9700, not `amdgpu`.
 
+**7. Set CPU to performance**
+
+Run `apt install linux-cpupower` and set the host to max performance: `cpupower frequency-set -g performance`.
+
 ---
 
 ## Acquire ubuntu server cloud image
@@ -257,15 +261,15 @@ curl -o /var/lib/vz/template/iso/<image_name> https://cloud-images.ubuntu.com/re
         - Leaves 4 logical cores for Proxmox host
     - **Type:** `host`
         - Exposes real CPU flags to guest — required for ROCm
-    - **Total Cores:** `20` (read-only, confirms sockets × cores)
-    - **VCPUs:** `20`
+    - **Total Cores:** `14` (read-only, confirms sockets × cores)
+    - **VCPUs:** `14`
         - Match cores
     - **CPU Units:** `1024`
         - Default; adjust if you add competing VMs
     - **CPU Limit:** `0` (unlimited)
         - Don't throttle your inference server
-    - **Enable NUMA:** *`CHECK`*
-        - E5-2680v4 is NUMA-aware; enabling improves memory locality for large model workloads
+    - **Enable NUMA:** *`UNCHECK`*
+        - Only 1 socket, no reason to use NUMA.
     - **CPU Affinity:** leave blank
         - Not needed unless you have multiple VMs competing for cores
 - **Memory:**
