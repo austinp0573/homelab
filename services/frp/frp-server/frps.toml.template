@@ -1,0 +1,7 @@
+bindPort = ${FRPS_BIND_PORT}
+vhostHttpPort = 80
+transport.tls.force = true
+
+[auth]
+method = "token"
+token = ${FRP_SECURE_TOKEN}
