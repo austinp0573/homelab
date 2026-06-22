@@ -13,7 +13,6 @@
 
 ### Memory Settings
 -   **Memory:** `53248` (52GB). 
-    -   *Why?* You have 64GB total. Proxmox needs about 4-6GB to manage the host OS and the ZFS/LVM-thin metadata (especially on NVMe drives). Giving the VM 52GB leaves a safe 12GB buffer for the host, preventing the host from experiencing OOM (Out of Memory) kernel panics.
 -   **Minimum Memory:** `53248` (Matches max memory).
 -   **Ballooning Device:** `UNCHECKED`. (Mandatory. Memory must be 100% statically pinned to RAM for the GPU DMA controller to function).
 -   **KSM (Kernel Samepage Merging):** `UNCHECKED`.
