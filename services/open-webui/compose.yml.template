@@ -12,8 +12,8 @@ services:
       - ENABLE_OLLAMA_API=False
       
       # Map Open WebUI to your server's existing OpenAI translation layer
-      - OPENAI_API_BASE_URLS=http://${LOCAL_LLM_API}/v1
-      - OPENAI_API_KEYS=local-token-not-needed
+      - OPENAI_API_BASE_URLS=${OPENWEBUI_API_BASE_URL}
+      - OPENAI_API_KEYS=${OPENWEBUI_API_KEY}
       
       # Optional: Security adjustments for homelab LAN access
       - WEBUI_AUTH=False # Set to False if you want to skip the login screen entirely
