@@ -1,0 +1,75 @@
+# keymap – layout and variant (e.g. "us us", "de de", "none")
+KEYMAPOPTS="${KEYMAPOPTS}"
+
+# hostname – the name the system will identify as on the network
+HOSTNAMEOPTS="${HOSTNAMEOPTS}"
+
+# device manager – mdev (busybox), mdevd (stand‑alone), or udev (eudev)
+DEVDOPTS=${DEVDOPTS}
+
+# network interfaces – raw content that will become /etc/network/interfaces
+INTERFACESOPTS="${INTERFACESOPTS}"
+
+# dns – optional search domain and up to 3 DNS server addresses
+# format: "-d <domain> <ip1> <ip2> <ip3>"
+DNSOPTS="${DNSOPTS}"
+
+# timezone – one of the files under /usr/share/zoneinfo
+TIMEZONEOPTS="${TIMEZONEOPTS}"
+
+# proxy – complete URL (http://host:port) or "none"
+PROXYOPTS=${PROXYOPTS}
+
+# apk repositories – combine the flags you need:
+#   -c   enable community repo
+#   -f   use fastest mirror
+#   -r   add a random mirror (no prompt)
+#   -1   use the first mirror (CDN)
+#   -o   enable community repo only for each defined repo
+APKREPOSOPTS="${APKREPOSOPTS}"
+
+# user creation – see "setup-user -h" for full list.
+#   -a          create admin user (adds to wheel/doas)
+#   -u          unlock the account (useful for ssh‑key login)
+#   -g <list>   comma‑ or space‑separated supplementary groups
+#   -k <key>    public ssh key or URL to a key, or "none"
+#   <username>  name of the user to create
+USEROPTS="${USEROPTS}"
+
+# user ssh key – public key text or URL; comment out to skip
+USERSSHKEY="${ADMIN_USER_SSH_KEY}"
+
+# ssh daemon – one of "openssh", "dropbear", or "none"
+SSHDOPTS=${SSHDOPTS}
+
+# root ssh key – public key text or URL; comment out to skip
+ROOTSSHKEY="${ROOT_USER_SSH_KEY}"
+
+# ntp – select daemon: "busybox", "openntpd", "chrony", or "none"
+NTPOPTS=${NTPOPTS}
+
+# disk layout – arguments for setup-disk
+#   -e          encrypt the target disk
+#   -L          use LVM for partitions
+#   -r          enable software RAID‑1 (single‑disk fallback)
+#   -m <mode>   "sys" for system disk, "data" for data only
+#   -s <size>   swap size in MiB (0 = no swap)
+#   -w <file>   write chosen install mode to this file
+#   /dev/sdX    target block device (use with care!)
+DISKOPTS="${DISKOPTS}"
+
+# boot size – size of the /boot partition in MiB (optional)
+BOOT_SIZE=${BOOT_SIZE}
+
+# swap size – size of the swap partition in MiB (0 = disabled)
+SWAP_SIZE=${SWAP_SIZE}
+
+# root size – size of the root filesystem in MiB or percent of VG
+ROOT_SIZE=${ROOT_SIZE}
+
+# lbu – mount point for an overlay (APKOvl) used for persistent config
+# format: "LABEL=<label>" or "UUID=<uuid>" or a full path under /media
+LBUOPTS=${LBUOPTS}
+
+# apk cache – directory to be used for the apk package cache
+APKCACHEOPTS="${APKCACHEOPTS}"

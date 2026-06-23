@@ -1,0 +1,331 @@
+#!/bin/bash
+
+# after booting the alpine VM run:
+# "mkdir -p /tmp/cfg && mount -t iso9660 /dev/sr1 /tmp/cfg && /tmp/cfg/automated-install.sh"
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+   echo "Error: This script must be run as root." >&2
+   exit 1
+fi
+
+if [[ ! -f "alpine-answerfile.cfg" ]]; then
+    echo "Error: Source 'alpine-answerfile.cfg' not found in current directory." >&2
+    exit 1
+fi
+
+while true; do
+    printf "Enter the VM-ID of the VM you would like to mount this to: "
+    read -r RESPONSE
+
+    case "$RESPONSE" in
+        [1-9][0-9][0-9])
+            VM_ID="$RESPONSE"
+            printf "\nYou've set the VM_ID=%s\n" "$VM_ID"
+            break
+            ;;
+        *)
+            printf "\nInvalid input, value must be between 100 - 999\n"
+            ;;
+    esac
+done
+
+STAGING_DIR="/tmp/alpine-payload-${VM_ID}"
+mkdir -p "$STAGING_DIR"
+
+trap 'rm -rf "$STAGING_DIR"' EXIT
+
+# Generate the executable installation script for the guest OS
+cat << 'EOF' > "$STAGING_DIR/automated-install.sh"
+#!/bin/sh
+set -e
+
+printf "\nstarting alpine automated install\n"
+
+export ERASE_DISKS="/dev/vda"
+
+# start setup-alpine using the pre-compiled answerfile
+setup-alpine -e -f "$(dirname "$0")/alpine-answerfile.cfg"
+
+printf "\napplying post install configs\n"
+
+# ensure the newly deployed root file tree is mounted locally
+mount /dev/vda3 /mnt 2>/dev/null || mount /dev/vda2 /mnt
+
+# Update account passwords
+echo 'root:$ROOT_USER_PASSWD' | chroot /mnt chpasswd
+echo '$ADMIN_USERNAME:$ADMIN_USER_PASSWD' | chroot /mnt chpasswd
+
+printf "\nexecuting post-install custom logic paths inside chroot\n"
+
+# Write directly to the target path from the host framework
+mkdir -p /mnt/etc/doas.d
+echo 'permit persist :wheel' > /mnt/etc/doas.d/20-wheel.conf
+
+# package additions
+chroot /mnt apk add --no-cache curl fastfetch openssh-sftp-server htop git doas qemu-guest-agent
+
+# configuration directly into the target shell environment
+cat << 'EOF_SPEEDTEST' > /mnt/tmp/install-speedtest.sh
+#!/bin/sh
+
+set -e
+
+RELEASE="1.7.10"
+ARCHIVE="speedtest-go_${RELEASE}_Linux_x86_64.tar.gz"
+URL="https://github.com/showwin/speedtest-go/releases/download/v${RELEASE}/${ARCHIVE}"
+
+for cmd in wget tar; do
+    command -v $cmd > /dev/null 2>&1 || { echo "error: $cmd is required but not installed"; exit 1; }
+done
+
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+cd "$tmpdir"
+
+echo "downloading speedtest-go v${RELEASE}"
+wget -q "$URL"
+
+echo "extracting"
+tar -xf "$ARCHIVE"
+
+if [ ! -f speedtest-go ]; then
+    echo "error: speedtest-go binary not found after extraction"
+    exit 1
+fi
+
+echo "installing to /usr/local/bin/speedtest"
+mv speedtest-go /usr/local/bin/speedtest
+
+cd /
+echo "verifying"
+which speedtest
+speedtest --version
+echo "done"
+EOF_SPEEDTEST
+
+chmod +x /mnt/tmp/install-speedtest.sh
+chroot /mnt /tmp/install-speedtest.sh
+rm -f /mnt/tmp/install-speedtest.sh
+
+:> /mnt/etc/motd
+
+cat << 'EOF_ZRAM' > /mnt/root/zram.sh
+#!/bin/sh
+# description: configure compressed swap in ram
+# zram costs a small amount of idle ram but is worth it on low-memory vps
+# lz4 = fastest with good compression ratio (recommended for low-ram vps)
+# lzo  = balanced
+# zstd = best compression, most cpu
+# see: https://linuxreviews.org/Comparison_of_Compression_Algorithms#zram_block_drive_compression
+
+set -e
+
+require_root() {
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "must be run as root"
+        exit 1
+    fi
+}
+
+prompt_positive_int() {
+    prompt="$1"
+    default="$2"
+
+    while :; do
+        printf "%s [default: %s]: " "$prompt" "$default"
+        read -r answer
+        answer="${answer:-$default}"
+
+        case "$answer" in
+            ''|*[!0-9]*|0)
+                echo "enter a positive number"
+                ;;
+            *)
+                PROMPT_RESULT="$answer"
+                return 0
+                ;;
+        esac
+    done
+}
+
+require_root
+
+if grep -q "^/dev/zram" /proc/swaps 2>/dev/null; then
+    echo "zram swap is already active"
+    cat /proc/swaps
+    exit 0
+fi
+
+apk update
+apk add zram-init
+
+echo ""
+echo "zram compression algorithm options:"
+echo "  lz4   - fastest, good compression ratio (recommended)"
+echo "  lzo   - balanced"
+echo "  zstd  - best compression, more cpu"
+echo ""
+printf "algorithm [default: lz4]: "
+read -r ALGO
+ALGO="${ALGO:-lz4}"
+
+case "$ALGO" in
+    lz4|lzo|zstd)
+        ;;
+    *)
+        echo "unsupported zram algorithm: $ALGO"
+        exit 1
+        ;;
+esac
+
+# default to 50% of ram - zram still needs room to operate in the ram it compresses into
+MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+DEFAULT_SIZE=$((MEM_MB / 2))
+
+echo ""
+prompt_positive_int "zram size in MB, half of ${MEM_MB}MB ram" "$DEFAULT_SIZE"
+SIZE="$PROMPT_RESULT"
+
+cat > /etc/conf.d/zram-init << EOF_ZRAM_CONF
+load_on_start="yes"
+unload_on_stop="yes"
+num_devices="1"
+type0="swap"
+size0="$SIZE"
+algo0="$ALGO"
+priority0="100"
+EOF_ZRAM_CONF
+
+rc-update add zram-init boot
+rc-service zram-init start
+
+echo ""
+echo "zram configured: ${SIZE}MB using ${ALGO} compression"
+cat /proc/swaps
+free -h
+EOF_ZRAM
+
+chmod +x /mnt/root/zram.sh
+
+cat << 'EOF_HARDEN' > /mnt/root/harden-ssh.sh
+#!/bin/sh
+
+set -e
+
+if [ ! -s /root/.ssh/authorized_keys ]; then
+    echo "no authorized_keys found in /root/.ssh - skipping ssh hardening to avoid lockout"
+    exit 0
+fi
+
+DROPBEAR_CONF="/etc/conf.d/dropbear"
+
+echo 'DROPBEAR_OPTS="-s"' >> "$DROPBEAR_CONF"
+EOF_HARDEN
+
+chmod +x /mnt/root/harden-ssh.sh
+
+cat << 'EOF_RUN_SCRIPTS'> /mnt/root/run-scripts.sh
+#!/bin/sh
+
+set -euo pipefail
+
+printf "\nrunning 1st time scripts\n"
+
+./zram.sh
+./harden-ssh.sh
+
+printf "\nscripts complete\nenabling qemu-guest-agent\n"
+
+rc-update add qemu-guest-agent default
+rc-service qemu-guest-agent start
+
+printf "\nremoving shell scripts\n"
+
+rm zram.sh harden-ssh.sh run-scripts.sh
+
+printf "\nshell scripts removed\n"
+printf "\n------------------------------\n"
+printf "All setup and ready for mayhem.\n"
+printf "------------------------------\n\n"
+EOF_RUN_SCRIPTS
+
+chmod +x /mnt/root/run-scripts.sh
+
+cat << 'EOF_ALIASES' > /mnt/etc/profile.d/10-aliases.sh
+#!/bin/sh
+
+alias ls='ls --color=auto'
+alias l='ls --color=auto -Alrth'
+alias df='df -h'
+alias free='free -h'
+alias top='top -d 1'
+alias nerd='nerdctl'
+alias doas='doas '
+
+c() {
+    curl -s "cht.sh/$1"
+}
+EOF_ALIASES
+
+cat << 'EOF_PROMPT' > /mnt/etc/profile.d/20-prompt.sh
+if [ "$(id -u)" -eq 0 ]; then
+    export PS1='${USER:-root}@${HOSTNAME%%.*}:${PWD}# '
+else
+    export PS1='${USER}@${HOSTNAME%%.*}:${PWD}$ '
+fi
+EOF_PROMPT
+
+cat << 'EOF_WELCOME' > /mnt/etc/profile.d/30-welcome.sh
+clear
+echo ""
+command -v fastfetch > /dev/null 2>&1 && fastfetch
+echo ""
+echo "welcome to $HOSTNAME $(whoami) - DATE: $(date)"
+if [ -s /etc/motd ]; then
+    echo ""
+    cat /etc/motd
+fi
+echo ""
+EOF_WELCOME
+
+cat << 'EOF_PROFILE' > /mnt/root/.profile
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export EDITOR=vi
+export PAGER=less
+EOF_PROFILE
+
+cat << 'EOF_ASHRC' > /mnt/root/.ashrc
+[ -f /etc/profile.d/10-aliases.sh ] && . /etc/profile.d/10-aliases.sh
+alias shutdown='halt'
+EOF_ASHRC
+
+chmod 644 /mnt/root/.profile /mnt/root/.ashrc
+
+# Clean up virtual hardware links and initiate the power restart step
+umount /mnt
+
+printf "\ninstallation finished, unmounting iso, and rebooting\n"
+
+reboot
+EOF
+
+# add execute permissions
+chmod +x "$STAGING_DIR/automated-install.sh"
+
+cp alpine-answerfile.cfg "$STAGING_DIR/alpine-answerfile.cfg"
+
+ISO_PATH="/var/lib/vz/template/iso/alpine-config-${VM_ID}.iso"
+genisoimage -output "$ISO_PATH" -volid "ALPINECFG" -J -r "$STAGING_DIR"
+
+qm set "${VM_ID}" --ide1 "local:iso/alpine-config-${VM_ID}.iso,media=cdrom"
+
+cd ..
+rm send-to-pve.tar.xz
+rm -rf pve-alpine-setup/
+
+echo "success: ISO with embedded installer created and attached to VM ${VM_ID}."
+
+printf "\nafter booting the alpine VM run:"
+printf "\nmkdir -p /tmp/cfg && mount -t iso9660 /dev/sr1 /tmp/cfg && /tmp/cfg/automated-install.sh\n"
