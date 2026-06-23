@@ -60,10 +60,17 @@ printf "\nexecuting post-install custom logic paths inside chroot\n"
 
 # Write directly to the target path from the host framework
 mkdir -p /mnt/etc/doas.d
+mkdir -p /mnt/root/.config/htop/
+mkdir -p /mnt/home/$ADMIN_USERNAME/.config/htop/
+cp "$(dirname "$0")/.vimrc" /mnt/root/.vimrc
+cp "$(dirname "$0")/.vimrc" /mnt/home/$ADMIN_USERNAME/.vimrc
+cp "$(dirname "$0")/htoprc" /mnt/root/.config/htop/htoprc
+cp "$(dirname "$0")/htoprc" /mnt/home/$ADMIN_USERNAME/.config/htop/htoprc
+chroot /mnt chown -R "$ADMIN_USERNAME:" "/home/$ADMIN_USERNAME/.vimrc" "/home/$ADMIN_USERNAME/.config"
 echo 'permit persist :wheel' > /mnt/etc/doas.d/20-wheel.conf
 
 # package additions
-chroot /mnt apk add --no-cache curl fastfetch openssh-sftp-server htop git doas qemu-guest-agent
+chroot /mnt apk add --no-cache curl fastfetch openssh-sftp-server htop git doas qemu-guest-agent vim
 
 # configuration directly into the target shell environment
 cat << 'EOF_SPEEDTEST' > /mnt/tmp/install-speedtest.sh
@@ -226,6 +233,84 @@ EOF_HARDEN
 
 chmod +x /mnt/root/harden-ssh.sh
 
+cat << 'EOF_MAKE_SKINNY' > /mnt/root/minimalize.sh
+#!/bin/sh
+
+# blacklist modules not needed on a proxmox vm
+cat > /etc/modprobe.d/blacklist-proxmox.conf << 'EOF_NESTED_0'
+blacklist drm
+blacklist drm_kms_helper
+blacklist simpledrm
+blacklist virtio_gpu
+blacklist fb
+blacklist kvm
+blacklist kvm_amd
+blacklist kvm_intel
+blacklist floppy
+blacklist hid
+blacklist usbhid
+blacklist hid_generic
+blacklist psmouse
+blacklist mousedev
+blacklist gve
+blacklist ena
+blacklist usbcore
+blacklist xhci_hcd
+blacklist xhci_pci
+blacklist usb_common
+blacklist i2c_core
+blacklist i2c_smbus
+blacklist i2c_piix4
+blacklist evdev
+blacklist button
+blacklist ata_generic
+blacklist i6300esb
+install drm /bin/true
+install drm_kms_helper /bin/true
+install simpledrm /bin/true
+install fb /bin/true
+EOF_NESTED_0
+
+# strip initramfs features to only what virtio block needs
+sed -i 's/^features=.*/features="base ext4 virtio"/' /etc/mkinitfs/mkinitfs.conf
+
+# update kernel boot parameters to disable ipv6 audit and watchdog
+sed -i 's/default_kernel_opts="/default_kernel_opts="ipv6.disable=1 audit=0 nowatchdog /' /etc/update-extlinux.conf
+update-extlinux
+
+# rebuild initramfs
+mkinitfs
+
+# replace chrony with busybox ntpd
+rc-service chronyd stop 2>/dev/null
+rc-update del chronyd default 2>/dev/null
+rc-update add ntpd default
+apk del chrony chrony-openrc 2>/dev/null
+
+# remove unused system packages
+apk del bash sudo nvme-cli syslinux mtools numactl e2fsprogs-extra partx 2>/dev/null
+apk del readline gdbm mpdecimal sqlite-libs p11-kit libtasn1 gnutls nettle gmp libidn2 libunistring libexpat libedit libffi shadow tzdata libseccomp libncursesw libpanelw 2>/dev/null
+
+# remove unnecessary boot services keeping swap active
+rc-update del hwclock boot 2>/dev/null
+
+# fix ipv6 sysctl errors since it is disabled
+sed -i '/net\.ipv6/s/^/# /' /usr/lib/sysctl.d/00-alpine.conf 2>/dev/null
+
+# prevent debugfs and tracefs from mounting
+sed -i 's/mount -n -t debugfs/: #mount -n -t debugfs/' /etc/init.d/sysfs
+sed -i 's/mount -n -t tracefs/: #mount -n -t tracefs/' /etc/init.d/sysfs
+
+# disable kernel watchdog to save cpu cycles
+cat > /etc/sysctl.d/10-minvps.conf << 'EOF_NESTED_1'
+kernel.watchdog = 0
+EOF_NESTED_1
+
+printf "\nproxmox optimization complete please reboot\n\n"
+EOF_MAKE_SKINNY
+
+chmod +x /mnt/root/minimalize.sh
+
 cat << 'EOF_RUN_SCRIPTS'> /mnt/root/run-scripts.sh
 #!/bin/sh
 
@@ -233,8 +318,11 @@ set -euo pipefail
 
 printf "\nrunning 1st time scripts\n"
 
+cd /root
+
 ./zram.sh
 ./harden-ssh.sh
+./minimalize.sh
 
 printf "\nscripts complete\nenabling qemu-guest-agent\n"
 
@@ -243,12 +331,14 @@ rc-service qemu-guest-agent start
 
 printf "\nremoving shell scripts\n"
 
-rm zram.sh harden-ssh.sh run-scripts.sh
+rm zram.sh harden-ssh.sh minimalize.sh run-scripts.sh
 
 printf "\nshell scripts removed\n"
 printf "\n------------------------------\n"
 printf "All setup and ready for mayhem.\n"
 printf "------------------------------\n\n"
+printf "\n\nREBOOTING!!!!!!!\n"
+reboot
 EOF_RUN_SCRIPTS
 
 chmod +x /mnt/root/run-scripts.sh
@@ -315,6 +405,8 @@ EOF
 chmod +x "$STAGING_DIR/automated-install.sh"
 
 cp alpine-answerfile.cfg "$STAGING_DIR/alpine-answerfile.cfg"
+cp dot-files/.vimrc "$STAGING_DIR/.vimrc"
+cp dot-files/htoprc "$STAGING_DIR/htoprc"
 
 ISO_PATH="/var/lib/vz/template/iso/alpine-config-${VM_ID}.iso"
 genisoimage -output "$ISO_PATH" -volid "ALPINECFG" -J -r "$STAGING_DIR"

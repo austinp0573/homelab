@@ -22,6 +22,7 @@ chmod +x attach-answerfile.sh
 printf "packaging everything for transport\n\n"
 
 mkdir pve-alpine-setup
+cp -r dot-files/ pve-alpine-setup/
 cp alpine-answerfile.cfg attach-answerfile.sh pve-alpine-setup/
 tar -cvf - pve-alpine-setup/ | xz -9e > send-to-pve.tar.xz
 
@@ -31,8 +32,8 @@ rm -rf pve-alpine-setup/
 rm -rf alpine-answerfile.cfg attach-answerfile.sh
 
 printf "all done\n\n"
-printf "scp -i ~/.ssh/<your_key> send-to-pve.tar.xz user@proxmox_hostname_or_IP\n\n"
-printf "\nON PVE Host:\n"
+printf "scp -i ~/.ssh/<your_key> send-to-pve.tar.xz user@proxmox_hostname_or_IP\n"
+printf "\nOn PVE Host:\n"
 printf "tar xf send-to-pve.tar.xz\n"
 printf "cd pve-alpine-setup/\n"
 printf "./attach-answerfile.sh\n\n"
