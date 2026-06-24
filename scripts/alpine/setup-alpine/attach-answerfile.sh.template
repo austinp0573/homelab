@@ -70,7 +70,7 @@ chroot /mnt chown -R "$ADMIN_USERNAME:" "/home/$ADMIN_USERNAME/.vimrc" "/home/$A
 echo 'permit persist :wheel' > /mnt/etc/doas.d/20-wheel.conf
 
 # package additions
-chroot /mnt apk add --no-cache curl fastfetch openssh-sftp-server htop git doas qemu-guest-agent vim
+chroot /mnt apk add --no-cache curl fastfetch openssh-sftp-server htop git doas qemu-guest-agent vim xz
 
 # configuration directly into the target shell environment
 cat << 'EOF_SPEEDTEST' > /mnt/tmp/install-speedtest.sh
