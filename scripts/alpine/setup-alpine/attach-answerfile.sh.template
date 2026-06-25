@@ -320,6 +320,8 @@ printf "\nrunning 1st time scripts\n"
 
 cd /root
 
+apk update && apk add openssh-sftp-server
+
 ./zram.sh
 ./harden-ssh.sh
 ./minimalize.sh
