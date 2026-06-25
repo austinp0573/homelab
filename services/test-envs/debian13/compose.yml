@@ -1,0 +1,10 @@
+services:
+  debian-env:
+    image: debian:trixie  
+    container_name: debian13-env
+    tty: true               
+    stdin_open: true        
+    restart: "no"           
+    working_dir: /root
+    volumes:
+      - ./data:/root/data

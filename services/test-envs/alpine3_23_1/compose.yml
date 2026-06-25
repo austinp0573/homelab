@@ -1,0 +1,10 @@
+services:
+  alpine-test:
+    image: alpine:3.24.1
+    container_name: alpine-env
+    working_dir: /root
+    tty: true
+    volumes:
+      -  ./data:/root/data
+    restart: unless-stopped
+
