@@ -1,0 +1,4 @@
+.env
+compose.yml
+compose.yaml
+frpc.toml
