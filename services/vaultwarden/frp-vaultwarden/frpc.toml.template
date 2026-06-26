@@ -1,0 +1,31 @@
+serverAddr = "${FRPS_SERVER_ADDR}"
+serverPort = ${FRPS_BIND_PORT}
+
+auth.method = "token"
+auth.token = "${FRP_SECURE_TOKEN}"
+transport.tls.enable = true
+
+[[proxies]]
+name = "${FRPC_VAULTWARDEN_TUNNEL_NAME_0}"
+type = "http"
+localIP = "${FRPC_VAULTWARDEN_LOCAL_IP}"
+localPort = ${FRPC_LOCAL_PORT}
+customDomains = ["${FRPC_CUSTOM_DOMAIN}"]
+locations = ["${FRPC_VAULTWARDEN_LOCATION_0}"]
+
+[[proxies]]
+name = "${FRPC_VAULTWARDEN_TUNNEL_NAME_1}"
+type = "http"
+localIP = "${FRPC_VAULTWARDEN_LOCAL_IP}"
+localPort = ${FRPC_LOCAL_PORT}
+customDomains = ["${FRPC_CUSTOM_DOMAIN}"]
+locations = ["${FRPC_VAULTWARDEN_LOCATION_1}"]
+httpUser = "${FRPC_HTTP_USERNAME}"
+httpPassword = "${FRPC_HTTP_PASSWD}"
+
+[[proxies]]
+name = "health-check"
+type = "http"
+localIP = "${FRPC_VAULTWARDEN_LOCAL_IP}"
+localPort = ${FRPC_LOCAL_PORT}
+customDomains = ["${FRPC_HEALTHCHECK_CUSTOM_DOMAIN}"]
