@@ -1,0 +1,31 @@
+services:
+  vaultwarden-service:
+    image: "${VAULTWARDEN_CONTAINER_IMAGE}"
+    container_name: ${VAULTWARDEN_CONTAINER_NAME}
+    restart: unless-stopped
+    environment:
+      DOMAIN: "${VAULTWARDEN_DOMAIN}"
+      ADMIN_TOKEN: "${VAULTWARDEN_ADMIN_TOKEN}"
+      IP_HEADER=X-Forwarded-For
+    volumes:
+      - ./vw-data:/data
+    ports: 
+      - "${VAULTWARDEN_LOCAL_BIND_IP}:${VAULTWARDEN_LOCAL_PORT}:${VAULTWARDEN_CONTAINER_PORT}"
+    networks:
+      - ${VAULTWARDEN_NETWORK_NAME}
+
+  cloudflared:
+    image: "${CLOUDFLARE_CONTAINER_IMAGE}"
+    container_name: ${CLOUDFLARE_CONTAINER_NAME}
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN}"
+    networks:
+      - ${VAULTWARDEN_NETWORK_NAME}
+    depends_on:
+      - vaultwarden-service
+
+networks:
+  ${VAULTWARDEN_NETWORK_NAME}:
+    driver: bridge
