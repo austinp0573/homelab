@@ -1,8 +1,0 @@
-services:
-  load-tester:
-    image: debian:trixie  
-    container_name: debian13-tester
-    tty: true               
-    stdin_open: true        
-    restart: "no"           
-    working_dir: /root
