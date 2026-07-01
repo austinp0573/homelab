@@ -1,0 +1,432 @@
+#!/bin/sh
+
+# configuration, hydrated by envsubst
+DATA_DIR="${DATA_DIR}"
+APP_NAME="${APP_NAME}"
+BACKUP_DEST_TYPE="${BACKUP_DEST_TYPE}"
+RCLONE_REMOTE="${RCLONE_REMOTE}"
+LOCAL_DEST_DIR="${LOCAL_DEST_DIR}"
+AGE_PUBLIC_KEY="${AGE_PUBLIC_KEY}"
+HEALTHCHECKS_URL="${HEALTHCHECKS_URL}"
+RETENTION_DAYS="${RETENTION_DAYS}"
+EXCLUDE_PATTERNS="${EXCLUDE_PATTERNS}"
+AUTO_INSTALL_DEPS="${AUTO_INSTALL_DEPS}"
+LOCK_DIR="${LOCK_DIR}"
+
+HOSTNAME_VALUE=""
+TIMESTAMP_VALUE=""
+ARCHIVE_NAME=""
+WORK_DIR=""
+STAGING_DIR=""
+LOCK_HELD="no"
+PLAIN_TAR=""
+PLAIN_ARCHIVE=""
+ENCRYPTED_ARCHIVE=""
+
+log() {
+    printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+}
+
+notify_success() {
+    if [ -z "$HEALTHCHECKS_URL" ]; then
+        return 0
+    fi
+
+    curl -fsS --retry 3 "$HEALTHCHECKS_URL" >/dev/null 2>&1 || log "warning, success notification failed"
+}
+
+notify_failure() {
+    if [ -z "$HEALTHCHECKS_URL" ]; then
+        return 0
+    fi
+
+    curl -fsS --retry 3 "$HEALTHCHECKS_URL/fail" >/dev/null 2>&1 || log "warning, failure notification failed"
+}
+
+cleanup() {
+    if [ -n "$WORK_DIR" ]; then
+        rm -rf "$WORK_DIR"
+    fi
+
+    if [ "$LOCK_HELD" = "yes" ] && [ -n "$LOCK_DIR" ]; then
+        rm -rf "$LOCK_DIR"
+    fi
+}
+
+fail() {
+    log "error, $*"
+    notify_failure
+    exit 1
+}
+
+on_signal() {
+    fail "backup interrupted"
+}
+
+require_value() {
+    value_name=$1
+    value_data=$2
+
+    if [ -z "$value_data" ]; then
+        fail "$value_name is required"
+    fi
+}
+
+is_number() {
+    case "$1" in
+        ''|*[!0123456789]*)
+            return 1
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}
+
+install_missing_tools() {
+    missing_tools=$1
+
+    if [ "$AUTO_INSTALL_DEPS" != "yes" ]; then
+        fail "missing required tools, $missing_tools"
+    fi
+
+    if command -v apk >/dev/null 2>&1; then
+        log "installing missing tools with apk"
+        apk add --no-cache findutils tar xz sqlite age rclone curl coreutils || fail "dependency install failed"
+        return 0
+    fi
+
+    if command -v apt-get >/dev/null 2>&1; then
+        log "installing missing tools with apt"
+        apt-get update || fail "dependency install update failed"
+        apt-get install -y findutils tar xz-utils sqlite3 age rclone curl coreutils hostname || fail "dependency install failed"
+        return 0
+    fi
+
+    fail "no supported package manager found for missing tools, $missing_tools"
+}
+
+check_commands() {
+    required_commands="find mkdir mktemp tar xz sqlite3 age hostname date cp mv rm"
+
+    if [ -n "$HEALTHCHECKS_URL" ]; then
+        required_commands="$required_commands curl"
+    fi
+
+    if [ "$BACKUP_DEST_TYPE" = "r2" ]; then
+        required_commands="$required_commands rclone"
+    fi
+
+    missing_commands=""
+
+    for command_name in $required_commands; do
+        if ! command -v "$command_name" >/dev/null 2>&1; then
+            missing_commands="$missing_commands $command_name"
+        fi
+    done
+
+    if [ -n "$missing_commands" ]; then
+        install_missing_tools "$missing_commands"
+    fi
+
+    for command_name in $required_commands; do
+        if ! command -v "$command_name" >/dev/null 2>&1; then
+            fail "required tool is not available, $command_name"
+        fi
+    done
+}
+
+validate_config() {
+    require_value "DATA_DIR" "$DATA_DIR"
+    require_value "APP_NAME" "$APP_NAME"
+    require_value "BACKUP_DEST_TYPE" "$BACKUP_DEST_TYPE"
+    require_value "AGE_PUBLIC_KEY" "$AGE_PUBLIC_KEY"
+
+    DATA_DIR=${DATA_DIR%/}
+
+    case "$DATA_DIR" in
+        /*)
+            ;;
+        *)
+            fail "DATA_DIR must be absolute"
+            ;;
+    esac
+
+    if [ "$DATA_DIR" = "" ] || [ "$DATA_DIR" = "/" ]; then
+        fail "DATA_DIR must point to an app data directory"
+    fi
+
+    case "$APP_NAME" in
+        *[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-]*)
+            fail "APP_NAME may only contain letters numbers dot underscore and dash"
+            ;;
+    esac
+
+    if [ ! -d "$DATA_DIR" ]; then
+        fail "DATA_DIR does not exist, $DATA_DIR"
+    fi
+
+    if [ ! -r "$DATA_DIR" ]; then
+        fail "DATA_DIR is not readable, $DATA_DIR"
+    fi
+
+    case "$BACKUP_DEST_TYPE" in
+        r2)
+            require_value "RCLONE_REMOTE" "$RCLONE_REMOTE"
+            require_value "RETENTION_DAYS" "$RETENTION_DAYS"
+            is_number "$RETENTION_DAYS" || fail "RETENTION_DAYS must be a number"
+            ;;
+        local)
+            require_value "LOCAL_DEST_DIR" "$LOCAL_DEST_DIR"
+            case "$LOCAL_DEST_DIR" in
+                /*)
+                    ;;
+                *)
+                    fail "LOCAL_DEST_DIR must be absolute"
+                    ;;
+            esac
+            ;;
+        *)
+            fail "BACKUP_DEST_TYPE must be r2 or local"
+            ;;
+    esac
+
+    if [ -z "$AUTO_INSTALL_DEPS" ]; then
+        AUTO_INSTALL_DEPS="no"
+    fi
+
+    case "$AUTO_INSTALL_DEPS" in
+        yes|no)
+            ;;
+        *)
+            fail "AUTO_INSTALL_DEPS must be yes or no"
+            ;;
+    esac
+
+    if [ -z "$LOCK_DIR" ]; then
+        LOCK_DIR="/tmp/$APP_NAME-backup.lock"
+    fi
+}
+
+acquire_lock() {
+    if mkdir "$LOCK_DIR" 2>/dev/null; then
+        LOCK_HELD="yes"
+        printf '%s\n' "$$" > "$LOCK_DIR/pid" || fail "could not write lock pid"
+        return 0
+    fi
+
+    old_pid=""
+    if [ -f "$LOCK_DIR/pid" ]; then
+        IFS= read -r old_pid < "$LOCK_DIR/pid"
+    fi
+
+    if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+        log "another backup is already running, exiting"
+        exit 0
+    fi
+
+    log "removing stale backup lock"
+    rm -rf "$LOCK_DIR" || fail "could not remove stale lock"
+    mkdir "$LOCK_DIR" || fail "could not create lock"
+    LOCK_HELD="yes"
+    printf '%s\n' "$$" > "$LOCK_DIR/pid" || fail "could not write lock pid"
+}
+
+prepare_work_dirs() {
+    WORK_DIR=$(mktemp -d "/tmp/$APP_NAME-backup.XXXXXX") || fail "could not create work directory"
+    trap cleanup EXIT
+    trap on_signal INT TERM
+
+    STAGING_DIR="$WORK_DIR/staging"
+    mkdir -p "$STAGING_DIR" || fail "could not create staging directory"
+}
+
+is_excluded() {
+    rel_path=$1
+
+    for exclude_pattern in $EXCLUDE_PATTERNS; do
+        case "$rel_path" in
+            $exclude_pattern|$exclude_pattern/*)
+                return 0
+                ;;
+        esac
+    done
+
+    return 1
+}
+
+is_sqlite_sidecar() {
+    case "$1" in
+        *.db-wal|*.db-shm|*.db-journal|*.db3-wal|*.db3-shm|*.db3-journal|*.sqlite-wal|*.sqlite-shm|*.sqlite-journal|*.sqlite3-wal|*.sqlite3-shm|*.sqlite3-journal)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+is_sqlite_candidate() {
+    case "$1" in
+        *.db|*.db3|*.sqlite|*.sqlite3)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+make_parent_dir() {
+    rel_path=$1
+    parent_path=${rel_path%/*}
+
+    if [ "$parent_path" != "$rel_path" ]; then
+        mkdir -p "$STAGING_DIR/$parent_path" || return 1
+    fi
+
+    return 0
+}
+
+copy_regular_file() {
+    src_path=$1
+    rel_path=$2
+    dest_path="$STAGING_DIR/$rel_path"
+
+    make_parent_dir "$rel_path" || fail "could not create parent directory for $rel_path"
+    cp -p "$src_path" "$dest_path" || fail "could not copy $rel_path"
+}
+
+copy_sqlite_file() {
+    src_path=$1
+    rel_path=$2
+    dest_path="$STAGING_DIR/$rel_path"
+
+    check_output=$(sqlite3 "$src_path" "PRAGMA quick_check;" 2>&1)
+    check_status=$?
+
+    if [ "$check_status" -ne 0 ]; then
+        case "$check_output" in
+            *"file is not a database"*|*"unsupported file format"*)
+                log "copying non sqlite file with sqlite extension, $rel_path"
+                copy_regular_file "$src_path" "$rel_path"
+                return 0
+                ;;
+            *)
+                fail "sqlite check failed for $rel_path"
+                ;;
+        esac
+    fi
+
+    if [ "$check_output" != "ok" ]; then
+        fail "sqlite quick check failed for $rel_path"
+    fi
+
+    case "$dest_path" in
+        *"'"*)
+            fail "sqlite backup path contains unsupported quote, $rel_path"
+            ;;
+    esac
+
+    make_parent_dir "$rel_path" || fail "could not create parent directory for $rel_path"
+    sqlite3 "$src_path" ".timeout 10000" ".backup '$dest_path'" || fail "sqlite backup failed for $rel_path"
+}
+
+stage_data() {
+    log "staging data from $DATA_DIR"
+    file_list="$WORK_DIR/file-list"
+
+    find "$DATA_DIR" -type f > "$file_list" || fail "could not list data files"
+
+    while IFS= read -r src_path; do
+        case "$src_path" in
+            "$DATA_DIR"/*)
+                rel_path=${src_path#"$DATA_DIR"/}
+                ;;
+            *)
+                fail "found file outside data directory, $src_path"
+                ;;
+        esac
+
+        if is_excluded "$rel_path"; then
+            log "skipping excluded path, $rel_path"
+            continue
+        fi
+
+        if is_sqlite_sidecar "$rel_path"; then
+            log "skipping sqlite sidecar, $rel_path"
+            continue
+        fi
+
+        if is_sqlite_candidate "$rel_path"; then
+            log "backing up sqlite candidate, $rel_path"
+            copy_sqlite_file "$src_path" "$rel_path"
+        else
+            copy_regular_file "$src_path" "$rel_path"
+        fi
+    done < "$file_list"
+}
+
+package_archive() {
+    HOSTNAME_VALUE=$(hostname) || fail "could not read hostname"
+    TIMESTAMP_VALUE=$(date '+%Y-%m-%d-%H%M') || fail "could not read timestamp"
+    ARCHIVE_NAME="$HOSTNAME_VALUE-$APP_NAME-$TIMESTAMP_VALUE.tar.xz.age"
+    PLAIN_TAR="$WORK_DIR/${ARCHIVE_NAME%.xz.age}"
+    PLAIN_ARCHIVE="$WORK_DIR/${ARCHIVE_NAME%.age}"
+    ENCRYPTED_ARCHIVE="$WORK_DIR/$ARCHIVE_NAME"
+
+    log "creating tar archive"
+    tar -C "$STAGING_DIR" -cf "$PLAIN_TAR" . || fail "tar archive failed"
+
+    log "compressing archive"
+    xz -6 -c "$PLAIN_TAR" > "$PLAIN_ARCHIVE" || fail "compression failed"
+    rm -f "$PLAIN_TAR" || fail "could not remove plain tar"
+
+    log "encrypting archive"
+    age -r "$AGE_PUBLIC_KEY" -o "$ENCRYPTED_ARCHIVE" "$PLAIN_ARCHIVE" || fail "encryption failed"
+    rm -f "$PLAIN_ARCHIVE" || fail "could not remove unencrypted archive"
+}
+
+dispatch_r2() {
+    remote_path="$RCLONE_REMOTE/$HOSTNAME_VALUE/$APP_NAME/"
+
+    log "copying archive to r2"
+    rclone copy "$ENCRYPTED_ARCHIVE" "$remote_path" || fail "r2 upload failed"
+
+    log "pruning old r2 archives"
+    rclone delete "$remote_path" --min-age "${RETENTION_DAYS}d" || fail "r2 prune failed"
+}
+
+dispatch_local() {
+    log "copying archive to local destination"
+    mkdir -p "$LOCAL_DEST_DIR" || fail "could not create local destination"
+    mv "$ENCRYPTED_ARCHIVE" "$LOCAL_DEST_DIR/$ARCHIVE_NAME" || fail "local archive move failed"
+}
+
+dispatch_archive() {
+    case "$BACKUP_DEST_TYPE" in
+        r2)
+            dispatch_r2
+            ;;
+        local)
+            dispatch_local
+            ;;
+        *)
+            fail "unknown destination type"
+            ;;
+    esac
+}
+
+main() {
+    validate_config
+    check_commands
+    prepare_work_dirs
+    acquire_lock
+    stage_data
+    package_archive
+    dispatch_archive
+    notify_success
+    log "backup completed, $ARCHIVE_NAME"
+}
+
+main "$@"
