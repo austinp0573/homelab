@@ -1,27 +1,36 @@
 #!/bin/sh
 
+# deps, find mkdir mktemp tar zstd sqlite3 hostname date cp mv rm kill
+# optional deps, age curl rclone
 # configuration, hydrated by envsubst
 DATA_DIR="${DATA_DIR}"
 APP_NAME="${APP_NAME}"
 BACKUP_DEST_TYPE="${BACKUP_DEST_TYPE}"
 RCLONE_REMOTE="${RCLONE_REMOTE}"
 LOCAL_DEST_DIR="${LOCAL_DEST_DIR}"
+COMPRESSION_TYPE="${COMPRESSION_TYPE}"
+ZSTD_FLAGS="${ZSTD_FLAGS}"
+ENCRYPT_BACKUP="${ENCRYPT_BACKUP}"
+ENCRYPTION_TYPE="${ENCRYPTION_TYPE}"
 AGE_PUBLIC_KEY="${AGE_PUBLIC_KEY}"
 HEALTHCHECKS_URL="${HEALTHCHECKS_URL}"
+REMOTE_RETENTION_ENABLED="${REMOTE_RETENTION_ENABLED}"
 RETENTION_DAYS="${RETENTION_DAYS}"
 EXCLUDE_PATTERNS="${EXCLUDE_PATTERNS}"
-AUTO_INSTALL_DEPS="${AUTO_INSTALL_DEPS}"
+LOCK_ENABLED="${LOCK_ENABLED}"
 LOCK_DIR="${LOCK_DIR}"
 
 HOSTNAME_VALUE=""
 TIMESTAMP_VALUE=""
-ARCHIVE_NAME=""
+BASE_NAME=""
+TAR_ARCHIVE=""
+COMPRESSED_ARCHIVE=""
+COMPRESSED_ARCHIVE_NAME=""
+FINAL_ARCHIVE=""
+FINAL_ARCHIVE_NAME=""
 WORK_DIR=""
 STAGING_DIR=""
 LOCK_HELD="no"
-PLAIN_TAR=""
-PLAIN_ARCHIVE=""
-ENCRYPTED_ARCHIVE=""
 
 log() {
     printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
@@ -48,7 +57,7 @@ cleanup() {
         rm -rf "$WORK_DIR"
     fi
 
-    if [ "$LOCK_HELD" = "yes" ] && [ -n "$LOCK_DIR" ]; then
+    if [ "$LOCK_ENABLED" = "yes" ] && [ "$LOCK_HELD" = "yes" ] && [ -n "$LOCK_DIR" ]; then
         rm -rf "$LOCK_DIR"
     fi
 }
@@ -83,31 +92,28 @@ is_number() {
     esac
 }
 
-install_missing_tools() {
-    missing_tools=$1
-
-    if [ "$AUTO_INSTALL_DEPS" != "yes" ]; then
-        fail "missing required tools, $missing_tools"
-    fi
-
-    if command -v apk >/dev/null 2>&1; then
-        log "installing missing tools with apk"
-        apk add --no-cache findutils tar xz sqlite age rclone curl coreutils || fail "dependency install failed"
-        return 0
-    fi
-
-    if command -v apt-get >/dev/null 2>&1; then
-        log "installing missing tools with apt"
-        apt-get update || fail "dependency install update failed"
-        apt-get install -y findutils tar xz-utils sqlite3 age rclone curl coreutils hostname || fail "dependency install failed"
-        return 0
-    fi
-
-    fail "no supported package manager found for missing tools, $missing_tools"
-}
-
 check_commands() {
-    required_commands="find mkdir mktemp tar xz sqlite3 age hostname date cp mv rm"
+    required_commands="find mkdir mktemp tar sqlite3 hostname date cp mv rm"
+
+    if [ "$LOCK_ENABLED" = "yes" ]; then
+        required_commands="$required_commands kill"
+    fi
+
+    case "$COMPRESSION_TYPE" in
+        zstd)
+            required_commands="$required_commands zstd"
+            ;;
+    esac
+
+    case "$ENCRYPT_BACKUP" in
+        yes)
+            case "$ENCRYPTION_TYPE" in
+                age)
+                    required_commands="$required_commands age"
+                    ;;
+            esac
+            ;;
+    esac
 
     if [ -n "$HEALTHCHECKS_URL" ]; then
         required_commands="$required_commands curl"
@@ -126,23 +132,40 @@ check_commands() {
     done
 
     if [ -n "$missing_commands" ]; then
-        install_missing_tools "$missing_commands"
+        fail "missing required tools, $missing_commands"
     fi
-
-    for command_name in $required_commands; do
-        if ! command -v "$command_name" >/dev/null 2>&1; then
-            fail "required tool is not available, $command_name"
-        fi
-    done
 }
 
 validate_config() {
     require_value "DATA_DIR" "$DATA_DIR"
     require_value "APP_NAME" "$APP_NAME"
     require_value "BACKUP_DEST_TYPE" "$BACKUP_DEST_TYPE"
-    require_value "AGE_PUBLIC_KEY" "$AGE_PUBLIC_KEY"
 
     DATA_DIR=${DATA_DIR%/}
+
+    if [ -z "$COMPRESSION_TYPE" ]; then
+        COMPRESSION_TYPE="zstd"
+    fi
+
+    if [ -z "$ZSTD_FLAGS" ]; then
+        ZSTD_FLAGS="-10"
+    fi
+
+    if [ -z "$ENCRYPT_BACKUP" ]; then
+        ENCRYPT_BACKUP="yes"
+    fi
+
+    if [ -z "$ENCRYPTION_TYPE" ]; then
+        ENCRYPTION_TYPE="age"
+    fi
+
+    if [ -z "$REMOTE_RETENTION_ENABLED" ]; then
+        REMOTE_RETENTION_ENABLED="no"
+    fi
+
+    if [ -z "$LOCK_ENABLED" ]; then
+        LOCK_ENABLED="yes"
+    fi
 
     case "$DATA_DIR" in
         /*)
@@ -162,6 +185,54 @@ validate_config() {
             ;;
     esac
 
+    case "$COMPRESSION_TYPE" in
+        zstd)
+            ;;
+        *)
+            fail "COMPRESSION_TYPE must be zstd"
+            ;;
+    esac
+
+    case "$ENCRYPT_BACKUP" in
+        yes|no)
+            ;;
+        *)
+            fail "ENCRYPT_BACKUP must be yes or no"
+            ;;
+    esac
+
+    case "$ENCRYPTION_TYPE" in
+        age)
+            ;;
+        *)
+            fail "ENCRYPTION_TYPE must be age"
+            ;;
+    esac
+
+    if [ "$ENCRYPT_BACKUP" = "yes" ]; then
+        case "$ENCRYPTION_TYPE" in
+            age)
+                require_value "AGE_PUBLIC_KEY" "$AGE_PUBLIC_KEY"
+                ;;
+        esac
+    fi
+
+    case "$REMOTE_RETENTION_ENABLED" in
+        yes|no)
+            ;;
+        *)
+            fail "REMOTE_RETENTION_ENABLED must be yes or no"
+            ;;
+    esac
+
+    case "$LOCK_ENABLED" in
+        yes|no)
+            ;;
+        *)
+            fail "LOCK_ENABLED must be yes or no"
+            ;;
+    esac
+
     if [ ! -d "$DATA_DIR" ]; then
         fail "DATA_DIR does not exist, $DATA_DIR"
     fi
@@ -173,8 +244,10 @@ validate_config() {
     case "$BACKUP_DEST_TYPE" in
         r2)
             require_value "RCLONE_REMOTE" "$RCLONE_REMOTE"
-            require_value "RETENTION_DAYS" "$RETENTION_DAYS"
-            is_number "$RETENTION_DAYS" || fail "RETENTION_DAYS must be a number"
+            if [ "$REMOTE_RETENTION_ENABLED" = "yes" ]; then
+                require_value "RETENTION_DAYS" "$RETENTION_DAYS"
+                is_number "$RETENTION_DAYS" || fail "RETENTION_DAYS must be a number"
+            fi
             ;;
         local)
             require_value "LOCAL_DEST_DIR" "$LOCAL_DEST_DIR"
@@ -191,24 +264,17 @@ validate_config() {
             ;;
     esac
 
-    if [ -z "$AUTO_INSTALL_DEPS" ]; then
-        AUTO_INSTALL_DEPS="no"
-    fi
-
-    case "$AUTO_INSTALL_DEPS" in
-        yes|no)
-            ;;
-        *)
-            fail "AUTO_INSTALL_DEPS must be yes or no"
-            ;;
-    esac
-
-    if [ -z "$LOCK_DIR" ]; then
+    if [ "$LOCK_ENABLED" = "yes" ] && [ -z "$LOCK_DIR" ]; then
         LOCK_DIR="/tmp/$APP_NAME-backup.lock"
     fi
 }
 
 acquire_lock() {
+    if [ "$LOCK_ENABLED" != "yes" ]; then
+        log "backup lock disabled"
+        return 0
+    fi
+
     if mkdir "$LOCK_DIR" 2>/dev/null; then
         LOCK_HELD="yes"
         printf '%s\n' "$$" > "$LOCK_DIR/pid" || fail "could not write lock pid"
@@ -367,40 +433,120 @@ stage_data() {
     done < "$file_list"
 }
 
-package_archive() {
+set_archive_names() {
     HOSTNAME_VALUE=$(hostname) || fail "could not read hostname"
     TIMESTAMP_VALUE=$(date '+%Y-%m-%d-%H%M') || fail "could not read timestamp"
-    ARCHIVE_NAME="$HOSTNAME_VALUE-$APP_NAME-$TIMESTAMP_VALUE.tar.xz.age"
-    PLAIN_TAR="$WORK_DIR/${ARCHIVE_NAME%.xz.age}"
-    PLAIN_ARCHIVE="$WORK_DIR/${ARCHIVE_NAME%.age}"
-    ENCRYPTED_ARCHIVE="$WORK_DIR/$ARCHIVE_NAME"
+    BASE_NAME="$HOSTNAME_VALUE-$APP_NAME-$TIMESTAMP_VALUE"
+    TAR_ARCHIVE="$WORK_DIR/$BASE_NAME.tar"
 
+    case "$COMPRESSION_TYPE" in
+        zstd)
+            COMPRESSED_ARCHIVE_NAME="$BASE_NAME.tar.zst"
+            ;;
+        *)
+            fail "unknown compression type"
+            ;;
+    esac
+
+    COMPRESSED_ARCHIVE="$WORK_DIR/$COMPRESSED_ARCHIVE_NAME"
+
+    case "$ENCRYPT_BACKUP" in
+        yes)
+            case "$ENCRYPTION_TYPE" in
+                age)
+                    FINAL_ARCHIVE_NAME="$COMPRESSED_ARCHIVE_NAME.age"
+                    ;;
+                *)
+                    fail "unknown encryption type"
+                    ;;
+            esac
+            ;;
+        no)
+            FINAL_ARCHIVE_NAME="$COMPRESSED_ARCHIVE_NAME"
+            ;;
+        *)
+            fail "unknown encryption setting"
+            ;;
+    esac
+
+    FINAL_ARCHIVE="$WORK_DIR/$FINAL_ARCHIVE_NAME"
+}
+
+create_tar() {
     log "creating tar archive"
-    tar -C "$STAGING_DIR" -cf "$PLAIN_TAR" . || fail "tar archive failed"
+    tar -C "$STAGING_DIR" -cf "$TAR_ARCHIVE" . || fail "tar archive failed"
+}
 
-    log "compressing archive"
-    xz -6 -c "$PLAIN_TAR" > "$PLAIN_ARCHIVE" || fail "compression failed"
-    rm -f "$PLAIN_TAR" || fail "could not remove plain tar"
+compress_archive() {
+    case "$COMPRESSION_TYPE" in
+        zstd)
+            log "compressing archive with zstd"
+            zstd $ZSTD_FLAGS -q -o "$COMPRESSED_ARCHIVE" "$TAR_ARCHIVE" || fail "compression failed"
+            ;;
+        *)
+            fail "unknown compression type"
+            ;;
+    esac
 
-    log "encrypting archive"
-    age -r "$AGE_PUBLIC_KEY" -o "$ENCRYPTED_ARCHIVE" "$PLAIN_ARCHIVE" || fail "encryption failed"
-    rm -f "$PLAIN_ARCHIVE" || fail "could not remove unencrypted archive"
+    rm -f "$TAR_ARCHIVE" || fail "could not remove plain tar"
+}
+
+encrypt_archive() {
+    case "$ENCRYPT_BACKUP" in
+        yes)
+            case "$ENCRYPTION_TYPE" in
+                age)
+                    log "encrypting archive with age"
+                    age -r "$AGE_PUBLIC_KEY" -o "$FINAL_ARCHIVE" "$COMPRESSED_ARCHIVE" || fail "encryption failed"
+                    rm -f "$COMPRESSED_ARCHIVE" || fail "could not remove unencrypted archive"
+                    ;;
+                *)
+                    fail "unknown encryption type"
+                    ;;
+            esac
+            ;;
+        no)
+            FINAL_ARCHIVE="$COMPRESSED_ARCHIVE"
+            FINAL_ARCHIVE_NAME="$COMPRESSED_ARCHIVE_NAME"
+            ;;
+        *)
+            fail "unknown encryption setting"
+            ;;
+    esac
+}
+
+package_archive() {
+    set_archive_names
+    create_tar
+    compress_archive
+    encrypt_archive
+}
+
+prune_r2() {
+    remote_path=$1
+
+    if [ "$REMOTE_RETENTION_ENABLED" != "yes" ]; then
+        log "remote retention disabled"
+        return 0
+    fi
+
+    log "pruning old r2 archives"
+    rclone delete "$remote_path" --min-age "${RETENTION_DAYS}d" || fail "r2 prune failed"
 }
 
 dispatch_r2() {
     remote_path="$RCLONE_REMOTE/$HOSTNAME_VALUE/$APP_NAME/"
 
     log "copying archive to r2"
-    rclone copy "$ENCRYPTED_ARCHIVE" "$remote_path" || fail "r2 upload failed"
+    rclone copy "$FINAL_ARCHIVE" "$remote_path" || fail "r2 upload failed"
 
-    log "pruning old r2 archives"
-    rclone delete "$remote_path" --min-age "${RETENTION_DAYS}d" || fail "r2 prune failed"
+    prune_r2 "$remote_path"
 }
 
 dispatch_local() {
     log "copying archive to local destination"
     mkdir -p "$LOCAL_DEST_DIR" || fail "could not create local destination"
-    mv "$ENCRYPTED_ARCHIVE" "$LOCAL_DEST_DIR/$ARCHIVE_NAME" || fail "local archive move failed"
+    mv "$FINAL_ARCHIVE" "$LOCAL_DEST_DIR/$FINAL_ARCHIVE_NAME" || fail "local archive move failed"
 }
 
 dispatch_archive() {
@@ -426,7 +572,7 @@ main() {
     package_archive
     dispatch_archive
     notify_success
-    log "backup completed, $ARCHIVE_NAME"
+    log "backup completed, $FINAL_ARCHIVE_NAME"
 }
 
 main "$@"
