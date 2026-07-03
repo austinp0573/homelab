@@ -3,7 +3,7 @@
 set -eou pipefail
 
 ARCH="amd64"
-VERSION="2.3.3"
+VERSION="2.3.4"
 RELEASE="nerdctl-${VERSION}-linux-${ARCH}.tar.gz"
 URL="https://github.com/containerd/nerdctl/releases/download/v${VERSION}/${RELEASE}"
 
