@@ -2,3 +2,4 @@
 compose.yml
 cf-run.txt
 prod/
+test/

@@ -6,7 +6,7 @@ services:
     environment:
       DOMAIN: "${VAULTWARDEN_DOMAIN}"
       ADMIN_TOKEN: "${VAULTWARDEN_ADMIN_TOKEN}"
-      IP_HEADER=X-Forwarded-For
+      IP_HEADER: "CF-Connecting-IP"
     volumes:
       - ./vw-data:/data
     ports: 
