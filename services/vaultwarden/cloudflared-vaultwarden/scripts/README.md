@@ -192,3 +192,7 @@ notes
 - overlapping runs are avoided with a lock directory when `LOCK_ENABLED` is `yes`
 - the script does not install packages during a backup run
 - object read and write r2 tokens need `no_check_bucket = true`
+
+&nbsp;
+
+**466f724a616e6574**

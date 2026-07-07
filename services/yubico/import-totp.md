@@ -23,3 +23,7 @@ example:
 ```bash
 shred -v -n 3 -z -u filename.txt
 ```
+
+&nbsp;
+
+**466f724a616e6574**
