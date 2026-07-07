@@ -87,3 +87,9 @@ if [ -f ~/.local/share/bash-completion/completions/rbw ]; then
 fi
 ```
 to `~/.bashrc`
+
+---
+
+&nbsp;
+
+**466f724a616e6574**
