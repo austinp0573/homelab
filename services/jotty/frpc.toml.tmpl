@@ -1,0 +1,16 @@
+serverAddr = "${JOTTY_FRPC_SERVER_ADDR}"
+serverPort = ${JOTTY_FRPC_SERVER_PORT}
+transport.tls.enable = true
+
+[auth]
+method = "token"
+token = "${JOTTY_FRPC_TOKEN}"
+
+[[proxies]]
+name = "${JOTTY_FRPC_TUNNEL_NAME}"
+type = "http"
+localIP = "${JOTTY_SERVICE_NAME}"
+localPort = ${JOTTY_HOST_PORT}
+customDomains = ["${JOTTY_FRPC_CUSTOM_DOMAIN}"]
+# httpUser = "${JOTTY_FRPC_HTTP_AUTH_USER}"
+# httpPassword = "${JOTTY_FRPC_HTTP_AUTH_PASSWD}"
