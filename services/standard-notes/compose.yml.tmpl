@@ -1,0 +1,61 @@
+services:
+  server:
+    image: standardnotes/server
+    env_file: .env
+    container_name: ${STANDARDNOTES_CONTAINER_NAME}
+    restart: unless-stopped
+    ports:
+      - ${STANDARDNOTES_HOST_PORT_0}:3000
+      - ${STANDARDNOTES_HOST_PORT_1}:3104
+    volumes:
+      - ./logs:/var/lib/server/logs
+      - ./uploads:/opt/server/packages/files/dist/uploads
+    networks:
+      - ${STANDARDNOTES_NETWORK_NAME}
+
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: ${LOCALSTACK_CONTAINER_NAME}
+    expose:
+      - 4566
+    restart: unless-stopped
+    environment:
+      - SERVICES=sns,sqs
+      - HOSTNAME_EXTERNAL=localstack
+      - LS_LOG=warn
+    volumes:
+      - ./localstack_bootstrap.sh:/etc/localstack/init/ready.d/localstack_bootstrap.sh
+    networks:
+      - ${STANDARDNOTES_NETWORK_NAME}
+
+  db:
+    image: mysql:8
+    container_name: ${DB_CONTAINER_NAME}
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWD}
+      - MYSQL_PASSWORD=${DB_USER_PASSWD}
+    expose:
+      - 3306
+    restart: unless-stopped
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./data/import:/docker-entrypoint-initdb.d
+    networks:
+      - ${STANDARDNOTES_NETWORK_NAME}
+
+  cache:
+    image: redis:6.0-alpine
+    container_name: ${REDIS_CONTAINER_NAME}
+    volumes:
+      - ./data/redis/:/data
+    expose:
+      - 6379
+    restart: unless-stopped
+    networks:
+      - ${STANDARDNOTES_NETWORK_NAME}
+
+networks:
+  ${STANDARDNOTES_NETWORK_NAME}:
+    name: ${STANDARDNOTES_NETWORK_NAME}
