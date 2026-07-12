@@ -1,0 +1,11 @@
+services:
+  koffan:
+    container_name: koffan
+    image: ghcr.io/pansalut/koffan:latest
+    environment:
+      - APP_PASSWORD=test123
+    volumes:
+      - ./koffan_data:/data
+    ports:
+      - "3133:8080"
+    restart: unless-stopped
