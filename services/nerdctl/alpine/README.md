@@ -31,3 +31,14 @@ rc-service containerd start
 rc-service buildkitd start
 ```
 
+## When using release nerdctl-full
+
+`tar Cxzvvf /usr/local nerdctl-full-2.3.4-linux-amd64.tar.gz`
+
+on systemd:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now containerd.service
+sudo systemctl enable --now buildkit.service
+```
