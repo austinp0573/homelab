@@ -56,3 +56,8 @@ mkdir -p /tmp/cfg && mount -t iso9660 /dev/sr1 /tmp/cfg && /tmp/cfg/automated-in
 7. It will reboot on it's own. `ssh` in with the key you populated (or the password)
 8. As `root` (though the user you setup has a password and is added to wheel)
     - `/root/run-scripts.sh`
+
+
+&nbsp;
+
+**466f724a616e6574**
