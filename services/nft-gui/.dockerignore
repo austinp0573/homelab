@@ -1,0 +1,8 @@
+.env
+.git
+.gitignore
+.dockerignore
+README.md
+scripts
+tests
+package.json
