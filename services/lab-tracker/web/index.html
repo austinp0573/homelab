@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>lab-tracker</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">lab-tracker</div>
+      <nav class="tabs" id="tabs">
+        <button type="button" class="tab active" data-view="dashboard">dashboard</button>
+        <button type="button" class="tab" data-view="tree">tree</button>
+        <button type="button" class="tab" data-view="table">table</button>
+        <button type="button" class="tab" data-view="fields">fields</button>
+      </nav>
+      <div class="spacer"></div>
+      <input type="search" id="search" placeholder="filter..." class="search">
+      <button type="button" id="btn-new">new asset</button>
+      <button type="button" id="btn-reload">reload from disk</button>
+    </header>
+    <div id="flash" class="flash hidden"></div>
+    <main id="main"></main>
+  </div>
+  <div id="modal" class="modal hidden">
+    <div class="modal-panel" id="modal-panel"></div>
+  </div>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
