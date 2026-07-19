@@ -1,0 +1,15 @@
+# lab asset inventory ui
+# copy .env.example to .env, then ./scripts/up.sh
+
+services:
+  lab-tracker:
+    build: .
+    image: ${COMPOSE_PROJECT_NAME:-lab-tracker}:local
+    container_name: ${CONTAINER_NAME:-lab-tracker}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8791}:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      DATA_DIR: /data
