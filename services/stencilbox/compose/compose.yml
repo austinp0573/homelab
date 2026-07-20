@@ -1,0 +1,15 @@
+---
+services:
+  stencilbox:
+    container_name: StencilBox
+    image: ghcr.io/jamesread/stencilbox:latest
+    volumes:
+      - stencilbox-config:/config
+    restart: unless-stopped
+    ports:
+      - "4337:8080"
+
+volumes:
+  stencilbox-config:
+    name: stencilbox-config
+    external: false
