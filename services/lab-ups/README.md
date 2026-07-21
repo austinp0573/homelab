@@ -1,5 +1,35 @@
 # Power Control
 
+## resource estimates
+
+Rough idle / typical / peak guesses per container. Not measured on my hosts - ballpark from docs and common reports.
+
+### nutify
+
+| | CPU | RAM | disk | network |
+|---|---|---|---|---|
+| low | 1-3% | ~60-120 MB | nut config + small db | local NUT / UI idle |
+| expected | 3-10% | ~120-250 MB | logs/history grow over time | polling UPS + UI |
+| high | 0.3-1 core | ~300-500 MB | logs if retention is long | event storms / many UI clients |
+
+### upsnap
+
+| | CPU | RAM | disk | network |
+|---|---|---|---|---|
+| low | 1-2% | ~40-80 MB | small sqlite/state | idle |
+| expected | 2-8% | ~80-150 MB | tens of MB | WoL / shutdown actions occasional |
+| high | 0.2-0.5 core | ~200-300 MB | still modest | bouncing many hosts at once |
+
+### restore-watcher / nut-watcher / init helpers
+
+| | CPU | RAM | disk | network |
+|---|---|---|---|---|
+| low | 0 when not running (oneshots) or <1% if looping | ~20-50 MB | scripts only | local docker/nut calls |
+| expected | brief spikes during events | ~40-80 MB | tiny | shutdown/restore signaling |
+| high | short CPU spikes | ~100-150 MB | tiny | outage automation burst |
+
+Init containers are short-lived. Watchers are event-driven and should stay quiet most of the time.
+
 A UPS shutdown and restore stack for a NanoPi (or similar SBC) with a USB UPS attached. It covers the full outage cycle: detecting a low battery, telling connected hosts to shut down, cutting UPS output power once they're down, then waking everything back up after utility power returns and the battery has recharged enough.
 
 The core pieces are stock containers, [Nutify](https://github.com/DartSteven/nutify) for the NUT server and monitoring UI, [UpSnap](https://github.com/seriousm4x/upsnap) for Wake-on-LAN and manual shutdown, plus a few small helpers built here.
@@ -168,3 +198,8 @@ docker compose exec restore-watcher upsc "$UPS_NAME@nutify:3493"
 - `upsnap-data/ssh/` — SSH key written by upsnap-ssh-init
 - `upsnap-data` (Docker volume) — UpSnap PocketBase database
 - `restore-state/` — `shutdown-expected.json` flag file, persists across container restarts
+
+
+&nbsp;
+
+**466f724a616e6574**
