@@ -13,3 +13,8 @@ sample env:
 ```bash
 curl -o .env https://raw.githubusercontent.com/Infisical/infisical/main/.env.example
 ```
+
+
+&nbsp;
+
+**466f724a616e6574**
