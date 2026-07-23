@@ -1,0 +1,36 @@
+# copy to server.yml and edit
+# see ../config-explanations.md
+
+base-url: "https://ntfy.example.com"
+listen-http: ":80"
+behind-proxy: true
+
+# auth - users/tokens/ACLs live in auth.db (scripts/*.sh), not in this file
+auth-file: "/var/lib/ntfy/auth.db"
+auth-default-access: "deny-all"
+enable-login: true
+require-login: true
+enable-signup: false
+enable-reservations: false
+
+attachment-cache-dir: "/var/cache/ntfy/attachments"
+attachment-total-size-limit: "100M"
+attachment-file-size-limit: "10M"
+attachment-expiry-duration: "24h"
+visitor-attachment-total-size-limit: "25M"
+visitor-attachment-daily-bandwidth-limit: "100M"
+
+cache-file: "/var/cache/ntfy/cache.db"
+cache-duration: "7d"
+
+# web push - fill after ./scripts/webpush-keys.sh
+# web-push-public-key: "REPLACE"
+# web-push-private-key: "REPLACE"
+# web-push-file: "/var/lib/ntfy/webpush.db"
+# web-push-email-address: "admin@example.com"
+
+# smtp outgoing - optional, leave commented until you have a relay
+# smtp-sender-addr: "smtp.example.com:587"
+# smtp-sender-from: "ntfy@example.com"
+# smtp-sender-user: "yoursmtpuser"
+# smtp-sender-pass: "yoursmtppass"
