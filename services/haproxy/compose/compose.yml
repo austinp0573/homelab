@@ -1,0 +1,14 @@
+services:
+  haproxy:
+    image: docker.io/haproxytech/haproxy-alpine:3.4
+    container_name: haproxy
+    restart: unless-stopped
+    network_mode: host
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - /etc/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - /etc/haproxy/certs:/etc/haproxy/certs:ro
