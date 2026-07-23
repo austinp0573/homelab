@@ -1,0 +1,42 @@
+# deploy to /opt/sidecar-nginx/
+# cp .env.example .env, then ./scripts/up.sh
+#
+# default conf is config/proxy/nginx.conf.
+# to try another pattern, set NGINX_CONF in .env (see config/*/README.md).
+# some patterns need extra volume mounts - those READMEs say what to add.
+
+services:
+  placeholder:
+    image: ${NGINX_IMAGE:-nginx:alpine}
+    container_name: ${PLACEHOLDER_CONTAINER_NAME:-sidecar-placeholder}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    volumes:
+      - ./placeholder/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./placeholder/html:/usr/share/nginx/html:ro
+
+  nginx:
+    image: ${NGINX_IMAGE:-nginx:alpine}
+    container_name: ${NGINX_CONTAINER_NAME:-sidecar-nginx}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    depends_on:
+      - placeholder
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:80"
+    volumes:
+      - ${NGINX_CONF:-./config/proxy/nginx.conf}:/etc/nginx/nginx.conf:ro
+      # basic-auth: uncomment and run ./scripts/htpasswd.sh
+      # - ./secrets/htpasswd:/etc/nginx/htpasswd:ro
+      # static: uncomment if serving files from ./static
+      # - ./static:/usr/share/nginx/html:ro
+      # tls: uncomment after ./scripts/gen-self-signed.sh
+      # - ./secrets/certs:/etc/nginx/certs:ro
+      # cache: uncomment for config/cache or kitchen-sink
+      # - nginx-cache:/var/cache/nginx
+    # if the app is not in this compose file, either:
+    # - change proxy_pass in the conf to host.docker.internal:PORT (linux may need extra_hosts below)
+    # - or attach nginx to the other stack's network
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+# volumes:
+#   nginx-cache:
