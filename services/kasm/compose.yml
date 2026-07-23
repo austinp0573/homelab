@@ -1,0 +1,29 @@
+# deploy to /opt/kasm/
+# copy .env.example to .env, copy secrets/vnc.env.example to secrets/vnc.env, then ./scripts/up.sh
+#
+# this is a standalone kasmweb workspace image (ubuntu xfce + kasmvnc), not the full
+# kasm workspaces platform. browser ui is https on 6901 with a self-signed cert.
+
+services:
+  kasm:
+    image: ${KASM_IMAGE:-kasmweb/desktop:1.19.0}
+    container_name: ${CONTAINER_NAME:-kasm}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-6901}:6901"
+    env_file:
+      - ./secrets/vnc.env
+    shm_size: ${SHM_SIZE:-1gb}
+    volumes:
+      # downloads only by default - mounting over /home/kasm-user hides the image home
+      - ${DATA_DIR:-./data}:/home/kasm-user/Downloads
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -k -s -o /dev/null -w '%{http_code}' https://127.0.0.1:6901/ | grep -qE '^(200|401)$'",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
