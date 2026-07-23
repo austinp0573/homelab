@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Silex v3.7.0">
+<link rel="stylesheet" href="/css/index-25e41cd0f25e02b24b3751a1aa7ec1e117086f31b3c7be26fc1fc6fdeb7f1e28.css" />
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap" rel="stylesheet">
+</head>
+<body id="iled">
+  <div class="mobile-cursor" id="mobile-cursor"></div>
+  <div class="retro-terminal">
+    <span class="prompt-user">austin@debian</span><span class="prompt-colon">:</span><span class="prompt-dir">~</span><span class="prompt-symbol">$</span>
+    <span class="command-text"></span>
+    <span class="blinking-cursor"></span>
+  </div>
+  <script>
+    const body = document.body;
+    const mobileCursor = document.getElementById('mobile-cursor');
+
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+    if (isTouchDevice) {
+      body.classList.add('touch-device');
+      document.addEventListener('touchmove', (event) => {
+        const touch = event.touches[0];
+        if (!touch || !mobileCursor) return;
+        mobileCursor.style.left = `${touch.clientX - 12}px`;
+        mobileCursor.style.top = `${touch.clientY - 12}px`;
+      }, { passive: true });
+      document.addEventListener('touchstart', (event) => {
+        const touch = event.touches[0];
+        if (!touch || !mobileCursor) return;
+        mobileCursor.style.left = `${touch.clientX - 12}px`;
+        mobileCursor.style.top = `${touch.clientY - 12}px`;
+      }, { passive: true });
+    }
+  </script>
+</body>
+</html>

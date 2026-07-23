@@ -1,0 +1,93 @@
+* { 
+  box-sizing: border-box; 
+} 
+
+:root {
+  --variable-1: #3498db;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+  cursor: url("../assets/openlogo-nd.svg") 16 16, auto;
+  background-image: url("../assets/skull_better_color.webp");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: 0.85;
+  transition: opacity 2s ease;
+}
+
+.retro-terminal {
+  position: absolute;
+  left: 49%;
+  top: 28%; /* Adjust this percentage to fine-tune height directly above the head */
+  transform: translate(-50%, -100%);
+  
+  /* Styling & Typography */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #00ff66;
+  font-family: 'Fira Mono', 'Courier New', monospace;
+  font-size: clamp(16px, 3.5vw, 26px);
+  line-height: 1.4;
+  padding: 12px 20px;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.prompt-user {
+  color: #00ff66;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.8);
+}
+
+.prompt-colon {
+  color: #00ff66;
+}
+
+.prompt-dir {
+  color: #00e5ff;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
+}
+
+.prompt-symbol {
+  color: #00ff66;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.8);
+  margin-right: 8px;
+}
+
+.command-text {
+  color: #00ff66;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.8);
+}
+
+.blinking-cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  background-color: #00ff66;
+  box-shadow: 0 0 8px #00ff66;
+  vertical-align: sub;
+  margin-left: 2px;
+  animation: retro-blink 5s cubic-bezier(0.11, 0, 0.5, 0) 0ms infinite normal forwards;
+}
+
+@keyframes retro-blink {
+	0%,
+	50%,
+	100% {
+		opacity: 1;
+	}
+
+	25%,
+	75% {
+		opacity: 0;
+	}
+}
