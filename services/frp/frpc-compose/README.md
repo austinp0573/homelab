@@ -1,4 +1,4 @@
-# frp setup
+# frpc compose
 
 &nbsp;
 
