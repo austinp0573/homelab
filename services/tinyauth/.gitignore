@@ -1,0 +1,7 @@
+.env
+*.log
+config/users
+data/*
+!data/.gitkeep
+secrets/*
+!secrets/*.example
