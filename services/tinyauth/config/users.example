@@ -1,0 +1,6 @@
+# one user per line: username:bcrypt_hash[:totp_secret]
+# create with ./scripts/create-user.sh
+# add totp with ./scripts/enable-totp.sh
+#
+# example line shape (fake hash):
+# austin:$2a$10$replaceMe
