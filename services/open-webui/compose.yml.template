@@ -1,24 +1,35 @@
 services:
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: open-webui
-    restart: unless-stopped
+    image: ${OPEN_WEBUI_IMAGE:-ghcr.io/open-webui/open-webui:v0.10.2}
+    container_name: ${CONTAINER_NAME:-open-webui}
+    restart: ${RESTART_POLICY:-unless-stopped}
     ports:
-      - "3000:8080"
+      - "${WEBUI_BIND:-127.0.0.1}:${WEBUI_PORT:-3000}:8080"
     volumes:
       - open-webui-data:/app/backend/data
     environment:
-      # Disable the internal Ollama service checks since you use a custom backend
-      - ENABLE_OLLAMA_API=False
-      
-      # Map Open WebUI to your server's existing OpenAI translation layer
-      - OPENAI_API_BASE_URLS=${OPENWEBUI_API_BASE_URL}
-      - OPENAI_API_KEYS=${OPENWEBUI_API_KEY}
-      
-      # Optional: Security adjustments for homelab LAN access
-      - WEBUI_AUTH=False # Set to False if you want to skip the login screen entirely
-      - ENABLE_SIGNUP=True # Allow creating your initial admin account on first load
+      ENABLE_OLLAMA_API: "False"
+      OPENAI_API_BASE_URLS: ${OPENWEBUI_API_BASE_URL:-http://llama-cpp:8080/v1}
+      OPENAI_API_KEYS: ${OPENWEBUI_API_KEY:-local}
+      WEBUI_AUTH: ${WEBUI_AUTH:-True}
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-True}
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      VECTOR_DB: qdrant
+      QDRANT_URI: ${QDRANT_URI:-http://llm-qdrant:6333}
+      RAG_EMBEDDING_ENGINE: openai
+      RAG_OPENAI_API_BASE_URL: ${RAG_OPENAI_API_BASE_URL:-http://llm-embed:8080/v1}
+      RAG_OPENAI_API_KEY: ${RAG_OPENAI_API_KEY:-local}
+      RAG_EMBEDDING_MODEL: ${RAG_EMBEDDING_MODEL:-nomic-embed-text-v1.5.Q8_0.gguf}
+      RAG_EMBEDDING_BATCH_SIZE: ${RAG_EMBEDDING_BATCH_SIZE:-8}
+      ENABLE_ASYNC_EMBEDDING: "False"
+    networks:
+      - llm-backend
 
 volumes:
   open-webui-data:
     name: open_webui_data
+
+networks:
+  llm-backend:
+    external: true
+    name: ${LLM_NETWORK:-llm-backend}
