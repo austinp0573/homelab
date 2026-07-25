@@ -1,0 +1,24 @@
+# deploy to /opt/nocodb/
+# copy .env.example to .env, set NC_AUTH_JWT_SECRET and NC_SITE_URL, then ./scripts/up.sh
+
+services:
+  nocodb:
+    image: ${NOCODB_IMAGE:-nocodb/nocodb:latest}
+    container_name: ${CONTAINER_NAME:-nocodb}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8789}:8080"
+    environment:
+      NC_AUTH_JWT_SECRET: ${NC_AUTH_JWT_SECRET:-}
+      NC_SITE_URL: ${NC_SITE_URL:-https://nocodb.private.example.com}
+      NC_DISABLE_TELE: "true"
+      NC_DISABLE_ERR_REPORTS: "true"
+      NC_DISABLE_SUPPORT_CHAT: "true"
+    volumes:
+      - ${DATA_DIR:-./data}:/usr/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
