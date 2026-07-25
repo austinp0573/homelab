@@ -1,0 +1,17 @@
+# static restic compose config generator ui
+# copy .env.example to .env, then ./scripts/up.sh
+
+services:
+  gen-restic:
+    build: .
+    image: ${COMPOSE_PROJECT_NAME:-gen-restic}:local
+    container_name: ${CONTAINER_NAME:-gen-restic}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8788}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
