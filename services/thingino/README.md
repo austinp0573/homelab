@@ -61,3 +61,8 @@ reboot
 ```
 
 (a handy calculator for the `mem` values is provided by the [Thingino IPC Memory Calculator](https://thingino.com/ramcalc))
+
+
+&nbsp;
+
+**466f724a616e6574**
