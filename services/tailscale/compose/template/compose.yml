@@ -1,0 +1,59 @@
+# deploy to /opt/tailscale-sidecar/ (rename for whatever service this sits next to)
+# copy .env.example to .env, put auth key in secrets/, then ./scripts/up.sh
+
+services:
+  tailscale:
+    image: ${TAILSCALE_IMAGE:-tailscale/tailscale:latest}
+    container_name: ${TS_CONTAINER_NAME:-tailscale}
+    hostname: ${TS_HOSTNAME:-tailscale}
+    env_file: .env
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_AUTH_ONCE: ${TS_AUTH_ONCE:-true}
+      TS_USERSPACE: ${TS_USERSPACE:-false}
+      TS_STATE_DIR: ${TS_STATE_DIR:-/var/lib/tailscale}
+      TS_HOSTNAME: ${TS_HOSTNAME:-}
+      TS_ROUTES: ${TS_ROUTES:-}
+      TS_EXTRA_ARGS: ${TS_EXTRA_ARGS:-}
+      TS_TAILSCALED_EXTRA_ARGS: ${TS_TAILSCALED_EXTRA_ARGS:-}
+      TS_ACCEPT_DNS: ${TS_ACCEPT_DNS:-}
+      TS_DEST_IP: ${TS_DEST_IP:-}
+      TS_SOCKS5_SERVER: ${TS_SOCKS5_SERVER:-}
+      TS_OUTBOUND_HTTP_PROXY_LISTEN: ${TS_OUTBOUND_HTTP_PROXY_LISTEN:-}
+      TS_SOCKET: ${TS_SOCKET:-}
+      TS_SERVE_CONFIG: ${TS_SERVE_CONFIG:-}
+      TS_ENABLE_HEALTH_CHECK: ${TS_ENABLE_HEALTH_CHECK:-}
+      TS_ENABLE_METRICS: ${TS_ENABLE_METRICS:-}
+      TS_LOCAL_ADDR_PORT: ${TS_LOCAL_ADDR_PORT:-}
+      TS_TAILNET_TARGET_IP: ${TS_TAILNET_TARGET_IP:-}
+      TS_TAILNET_TARGET_FQDN: ${TS_TAILNET_TARGET_FQDN:-}
+      TS_CLIENT_ID: ${TS_CLIENT_ID:-}
+      TS_CLIENT_SECRET: ${TS_CLIENT_SECRET:-}
+      TS_ID_TOKEN: ${TS_ID_TOKEN:-}
+      TS_AUDIENCE: ${TS_AUDIENCE:-}
+      TS_KUBE_SECRET: ${TS_KUBE_SECRET:-}
+      TS_EXPERIMENTAL_VERSIONED_CONFIG_DIR: ${TS_EXPERIMENTAL_VERSIONED_CONFIG_DIR:-}
+      TS_EXPERIMENTAL_SERVICE_AUTO_ADVERTISEMENT: ${TS_EXPERIMENTAL_SERVICE_AUTO_ADVERTISEMENT:-}
+    volumes:
+      - ./ts-state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    privileged: true
+    # sample app listens on :80 in the shared netns - published on the host for local checks.
+    # for tailnet-only access, delete this ports block.
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    restart: ${RESTART_POLICY:-unless-stopped}
+
+  # placeholder app. replace with whatever you are sidecaring.
+  # shares the tailscale netns, so it is reachable on the tailnet IP and via HOST_PORT above.
+  app:
+    image: ${APP_IMAGE:-nginx:alpine}
+    container_name: ${APP_CONTAINER_NAME:-tailscale-app}
+    network_mode: service:tailscale
+    depends_on:
+      - tailscale
+    restart: ${RESTART_POLICY:-unless-stopped}
+
+volumes:
+  ts-state:
