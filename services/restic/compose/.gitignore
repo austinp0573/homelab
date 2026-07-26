@@ -1,0 +1,17 @@
+.env
+includes.txt
+secrets/password.txt
+secrets/repo_location.txt
+secrets/truenas_repo_location.txt
+secrets/rest_username.txt
+secrets/rest_password.txt
+secrets/aws_credentials
+secrets/ntfy_token.txt
+secrets/*.crt
+certs/*.crt
+certs/*.pem
+staging/**
+!staging/.gitkeep
+!staging/app/
+!staging/app/.gitkeep
+*.log

@@ -1,0 +1,30 @@
+# deploy to /opt/restic-client/
+# copy one profile example to .env, then fill secrets/
+
+services:
+  restic:
+    image: restic/restic:0.19.1
+    container_name: restic
+    env_file: .env
+    environment:
+      RESTIC_REPOSITORY_FILE: /run/secrets/repo_location.txt
+      RESTIC_PASSWORD_FILE: /run/secrets/password.txt
+      RESTIC_CACHE_DIR: /cache
+      TMPDIR: /cache/tmp
+      RESTIC_HOST: ${RESTIC_HOST}
+      RESTIC_PACK_SIZE: ${RESTIC_PACK_SIZE:-64}
+      RESTIC_COMPRESSION: ${RESTIC_COMPRESSION:-auto}
+      # set by backup.sh / helpers from secrets files when using rest server
+      RESTIC_REST_USERNAME: ${RESTIC_REST_USERNAME:-}
+      RESTIC_REST_PASSWORD: ${RESTIC_REST_PASSWORD:-}
+    volumes:
+      # host profile mounts /. app profile uses ./empty-host instead.
+      - ${HOST_ROOT:-/}:/host:ro
+      - ./excludes.txt:/etc/restic/excludes.txt:ro
+      - ./includes.txt:/etc/restic/includes.txt:ro
+      - ./secrets:/run/secrets:ro
+      - ./certs:/certs:ro
+      - ./staging:/staging:ro
+      - ./staging/app:/app:ro
+      - /var/cache/restic:/cache
+    restart: "no"

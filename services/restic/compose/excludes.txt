@@ -1,0 +1,44 @@
+# paths as seen inside the container (/ mounted at /host)
+
+# virtual filesystems and runtime
+/host/dev
+/host/proc
+/host/sys
+/host/tmp
+/host/run
+/host/lost+found
+
+# mounted storage is normally backed up by its own job
+/host/mnt
+
+# bulk media usually has its own backup policy
+/host/media
+
+# caches and package noise
+/host/var/cache
+/host/var/tmp
+/host/var/lib/docker
+/host/var/lib/containerd
+/host/var/lib/nerdctl
+/host/var/lib/libvirt
+
+# restic local cache (already excluded from repo content usefully)
+/host/var/cache/restic
+
+# the deployed template contains backup secrets and staged application copies
+/host/opt/restic-backup
+
+# user caches
+/host/home/*/.cache
+/host/home/*/.local/share/Trash
+/host/root/.cache
+**/.venv
+**/__pycache__
+**/site-packages/ansible_collections/*
+**/ansible/lib/*
+**/target/debug/*
+**/cache
+
+# common junk
+**/.DS_Store
+**/node_modules
