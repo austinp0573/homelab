@@ -1,0 +1,25 @@
+services:
+  ebook2audiobook:
+    image: ${EBOOK_IMAGE:-athomasson2/ebook2audiobook:rocm}
+    container_name: ${CONTAINER_NAME:-ebook2audiobook}
+    restart: "${RESTART_POLICY:-no}"
+    ports:
+      - "${EBOOK_BIND:-127.0.0.1}:${EBOOK_PORT:-7860}:7860"
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    ipc: host
+    security_opt:
+      - seccomp=unconfined
+    volumes:
+      - ${EBOOKS_DIR:-/opt/llm/ebooks}:/app/ebooks
+      - ${AUDIOBOOKS_DIR:-/opt/llm/audiobooks}:/app/audiobooks
+      - ${MODELS_DIR:-/opt/llm/ebook-models}:/app/models
+      - ${VOICES_DIR:-/opt/llm/ebook-voices}:/app/voices
+      - ${TMP_DIR:-/opt/llm/ebook-tmp}:/app/tmp
+    environment:
+      HIP_VISIBLE_DEVICES: ${HIP_VISIBLE_DEVICES:-0}
+      HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION:-}
