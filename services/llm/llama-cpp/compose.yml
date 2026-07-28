@@ -1,0 +1,43 @@
+# deploy to /opt/llm-llama-cpp/
+# copy .env.example to .env, put GGUFs in /opt/llm/models, then ./scripts/up.sh
+
+services:
+  llama-cpp:
+    image: ${LLAMA_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-rocm}
+    container_name: ${CONTAINER_NAME:-llama-cpp}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:8080"
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    ipc: host
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${MODELS_DIR:-/opt/llm/models}:/models:ro
+    environment:
+      HIP_VISIBLE_DEVICES: ${HIP_VISIBLE_DEVICES:-0}
+      HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION:-}
+    networks:
+      - llm-backend
+    command:
+      - -m
+      - /models/${MODEL_FILE}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - -c
+      - ${CTX_SIZE:-8192}
+      - -ngl
+      - ${N_GPU_LAYERS:-999}
+      - --jinja
+
+networks:
+  llm-backend:
+    external: true
+    name: ${LLM_NETWORK:-llm-backend}
