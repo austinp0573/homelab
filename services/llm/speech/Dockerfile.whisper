@@ -1,0 +1,17 @@
+ARG ROCM_PYTORCH_IMAGE=rocm/pytorch:latest
+FROM ${ROCM_PYTORCH_IMAGE}
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ffmpeg \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir openai-whisper fastapi uvicorn python-multipart
+
+WORKDIR /app
+COPY whisper/app.py /app/app.py
+
+ENV WHISPER_MODEL=medium
+ENV WHISPER_DEVICE=cuda
+
+EXPOSE 9000
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9000"]
