@@ -1,0 +1,50 @@
+# deploy to /opt/llm-speech/
+# copy .env.example to .env, then ./scripts/up.sh
+
+services:
+  whisper:
+    build:
+      context: .
+      dockerfile: Dockerfile.whisper
+      args:
+        ROCM_PYTORCH_IMAGE: ${ROCM_PYTORCH_IMAGE:-rocm/pytorch:latest}
+    image: ${WHISPER_IMAGE:-local/llm-whisper-rocm:latest}
+    container_name: ${WHISPER_CONTAINER_NAME:-llm-whisper}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${WHISPER_BIND:-127.0.0.1}:${WHISPER_HOST_PORT:-9000}:9000"
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    ipc: host
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${WHISPER_CACHE_DIR:-/opt/llm/whisper}:/root/.cache/whisper
+    environment:
+      WHISPER_MODEL: ${WHISPER_MODEL:-medium}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cuda}
+      WHISPER_MAX_UPLOAD_MB: ${WHISPER_MAX_UPLOAD_MB:-200}
+      HIP_VISIBLE_DEVICES: ${HIP_VISIBLE_DEVICES:-0}
+      HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION:-}
+
+  piper:
+    image: ${PIPER_IMAGE:-rhasspy/wyoming-piper:latest}
+    container_name: ${PIPER_CONTAINER_NAME:-llm-piper}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${PIPER_BIND:-127.0.0.1}:${PIPER_HOST_PORT:-10200}:10200"
+    volumes:
+      - ${TTS_DIR:-/opt/llm/tts}:/data
+    command:
+      - --voice
+      - ${PIPER_VOICE:-en_US-lessac-medium}
+      - --uri
+      - tcp://0.0.0.0:10200
+      - --data-dir
+      - /data
+      - --download-dir
+      - /data

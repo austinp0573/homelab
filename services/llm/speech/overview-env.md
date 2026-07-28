@@ -1,0 +1,27 @@
+# speech env
+
+Whisper (GPU) + Piper (CPU Wyoming). stop llama/Comfy before Whisper.
+
+| name (key) | default value | purpose + notes |
+| --- | --- | --- |
+| `COMPOSE_PROJECT_NAME` | `llm-speech` | Compose project for Whisper + Piper together. One project so `down` stops STT without hunting two names. Piper can stay up beside llama; Whisper cannot — still convenient to manage as one unit when you are in "voice lab" mode. Renaming orphans volumes/binds mentally even if paths are absolute. |
+| `RESTART_POLICY` | `unless-stopped` | Both services come back after reboot. That means Whisper can grab the GPU on boot and surprise llama — stop Whisper when you want llama as the default resident. Piper alone is harmless if you scale Whisper to zero somehow; with this compose they share the policy. Be deliberate about what is left running overnight. |
+| `WHISPER_CONTAINER_NAME` | `llm-whisper` | Stable name for the GPU STT container. Used in logs and device debugging. Not usually DNS-peered by other LLM stacks the way llama is. Keep unique so you do not attach exec to the wrong box. |
+| `PIPER_CONTAINER_NAME` | `llm-piper` | Wyoming Piper TTS container name. Home Assistant / Wyoming clients may target the host port, not this DNS name. Fine to leave running while llama is up — CPU only. Distinct from ebook2audiobook voices paths. |
+| `WHISPER_BIND` | `127.0.0.1` | Host bind for the Whisper HTTP API/UI. Loopback default; open only if you need LAN STT and trust the network. Whisper uploads can be large — exposure is both privacy and DoS. Prefer tunnel over wide bind. |
+| `WHISPER_HOST_PORT` | `9000` | Host port for Whisper. Remember it when curling health or posting audio. Collision with other lab services on 9000 is annoying but obvious. Container-internal porting is defined in compose — this is the host side you care about daily. |
+| `PIPER_BIND` | `127.0.0.1` | Host bind for Wyoming Piper. Open wider only if a LAN HA instance must reach Wyoming directly and the firewall allows it. Wyoming is a simple protocol — do not put it on the open internet. Loopback + proxy is enough for same-host HA. |
+| `PIPER_HOST_PORT` | `10200` | Host port for Wyoming Piper (common Wyoming default neighborhood). Point HA Wyoming integration here when bind allows. Changing it means updating every client. Does not conflict with Whisper's GPU story. |
+| `WHISPER_CACHE_DIR` | `/opt/llm/whisper` | Host cache for Whisper model weights/downloads. Persist or you re-download multi-GB models every recreate. Separate from llama GGUF storage on purpose. Disk full here fails model load after a long download. |
+| `TTS_DIR` | `/opt/llm/tts` | Host dir for Piper voice models. Persist voices across recreates. Do not confuse with ebook2audiobook `VOICES_DIR`. Missing voices = Piper start or synthesize errors that look like network problems from HA. |
+| `WHISPER_MODEL` | `medium` | Whisper model size name pulled into the cache dir. Larger = better quality and more VRAM; `medium` is the lab default compromise. Changing model does not free the old weights until you prune the cache. Match expectations to GPU VRAM after llama is stopped. |
+| `WHISPER_DEVICE` | `cuda` | Device string the app expects; on ROCm builds this still often says `cuda` even though HIP is underneath. Setting `cpu` "fixes" GPU contention by making STT uselessly slow. Wrong device string fails init — check image docs before inventing values. Confirm the built image's ROCm path before changing this; random values just crash import. |
+| `WHISPER_MAX_UPLOAD_MB` | `200` | Max upload size for audio posted to the service. Too low rejects long recordings; too high lets one client fill disk. Align with reverse-proxy body limits if you put Caddy/HAProxy in front. Not a substitute for authenticating the endpoint. |
+| `ROCM_PYTORCH_IMAGE` | `rocm/pytorch:rocm7.2.3_ubuntu24.04_py3.12_pytorch_release_2.9.1` | Build-arg base for the local Whisper image. Must match the ROCm/driver story on the host or the build runs and runtime GPU fails. Compose may fall back to `latest` if unset — pin for repeatability. Rebuilding after a driver jump is normal pain. |
+| `WHISPER_IMAGE` | `local/llm-whisper-rocm:latest` | Locally built Whisper-on-ROCm image tag. Build before up or compose pulls nothing useful. Retag carefully so you do not run an old build against a new ROCm userland. This is the GPU half of the stack — treat like llama for exclusivity. |
+| `PIPER_IMAGE` | `rhasspy/wyoming-piper:2.2.2` | Pinned Wyoming Piper image. CPU, small, safe beside llama. Bump when HA Wyoming protocol needs it. Floating latest is unnecessary risk for a boring TTS daemon. |
+| `PIPER_VOICE` | `en_US-lessac-medium` | Default Piper voice id loaded/used by the container. Must exist under `TTS_DIR` / image expectations. Wrong voice name fails synthesize while the container still looks "up". Change per language needs rather than running parallel Piper stacks casually. |
+| `HIP_VISIBLE_DEVICES` | `0` | GPU index for Whisper only; Piper ignores it. Stop llama/Comfy/ebook before starting Whisper with this set. Wrong index = no accelerator. Multi-GPU labs pin explicitly so STT does not land on the training card. |
+| `HSA_OVERRIDE_GFX_VERSION` | *(empty)* | Whisper-only ROCm override; leave empty unless required. Same rules as llama — bad override breaks HIP. Do not set it "just in case" because llama needed it on another machine. Clear it when testing whether the image supports your gfx natively. |
+
+Piper is fine beside llama; Whisper is not.
