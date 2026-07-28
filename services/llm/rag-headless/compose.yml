@@ -1,0 +1,45 @@
+# deploy to /opt/llm-rag-headless/
+# copy .env.example to .env, put embed GGUF in /opt/llm/models, then ./scripts/up.sh
+
+services:
+  qdrant:
+    image: ${QDRANT_IMAGE:-qdrant/qdrant:v1.13.2}
+    container_name: ${QDRANT_CONTAINER_NAME:-llm-qdrant}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${QDRANT_BIND:-127.0.0.1}:${QDRANT_HOST_PORT:-6333}:6333"
+      - "${QDRANT_BIND:-127.0.0.1}:${QDRANT_GRPC_PORT:-6334}:6334"
+    volumes:
+      - ${QDRANT_DATA_DIR:-/opt/llm/rag/qdrant}:/qdrant/storage
+    networks:
+      - llm-backend
+
+  embed:
+    image: ${EMBED_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    container_name: ${EMBED_CONTAINER_NAME:-llm-embed}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${EMBED_BIND:-127.0.0.1}:${EMBED_HOST_PORT:-8081}:8080"
+    volumes:
+      - ${MODELS_DIR:-/opt/llm/models}:/models:ro
+    networks:
+      - llm-backend
+    command:
+      - -m
+      - /models/${EMBED_MODEL_FILE}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --embedding
+      - -c
+      - ${EMBED_CTX_SIZE:-2048}
+      - -t
+      - ${EMBED_THREADS:-8}
+      - -ngl
+      - "0"
+
+networks:
+  llm-backend:
+    external: true
+    name: ${LLM_NETWORK:-llm-backend}
