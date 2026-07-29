@@ -1,0 +1,24 @@
+{
+  "providers": {
+    "llamacpp": {
+      "baseUrl": "http://host.docker.internal:8080/v1",
+      "api": "openai-completions",
+      "apiKey": "local",
+      "compat": {
+        "supportsUsageInStreaming": false,
+        "maxTokensField": "max_tokens"
+      },
+      "models": [
+        {
+          "id": "local-coder",
+          "name": "local llama.cpp coder",
+          "reasoning": false,
+          "input": ["text"],
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+          "contextWindow": 8192,
+          "maxTokens": 2048
+        }
+      ]
+    }
+  }
+}

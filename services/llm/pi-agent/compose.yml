@@ -1,0 +1,28 @@
+# interactive only - use ./scripts/run.sh /path/to/project
+# build once with ./scripts/build.sh
+
+services:
+  pi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${PI_IMAGE:-local/llm-pi-agent:latest}
+    container_name: ${CONTAINER_NAME:-llm-pi}
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    env_file: .env
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-local}
+    volumes:
+      - ${PROJECT_DIR:-.}:/workspace
+      - ./config/models.json:/root/.pi/agent/models.json:ro
+      - ./extensions:/root/.pi/agent/extensions:ro
+      - pi-agent-state:/root/.pi/agent/sessions
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # network to reach llama.cpp on the host
+    # default bridge is fine with host.docker.internal / 172.17.0.1
+
+volumes:
+  pi-agent-state:
