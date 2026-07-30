@@ -1,0 +1,33 @@
+# scrape configs. keep cardinality small on a homelab box.
+# placeholders for other services are commented - uncomment and fix host:port.
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  - job_name: node
+    static_configs:
+      - targets:
+          - node_exporter:9100
+
+  # examples - leave commented until the target exists and /metrics is reachable
+  # from this container network (or publish the target on the host and use
+  # host.docker.internal / the host gateway ip).
+  #
+  # - job_name: gatus
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #         - host.docker.internal:8080
+  #
+  # - job_name: ntfy
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #         - host.docker.internal:2586
