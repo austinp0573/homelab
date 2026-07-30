@@ -1,0 +1,29 @@
+// alloy ships logs to loki on the same compose network.
+// sources below are placeholders - enable what you need.
+
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// example: tail host files (also mount /var/log in compose.yml)
+// local.file_match "varlogs" {
+//   path_targets = [{
+//     __path__ = "/var/log/*.log",
+//     job      = "varlogs",
+//   }]
+// }
+//
+// loki.source.file "varlogs" {
+//   targets    = local.file_match.varlogs.targets
+//   forward_to = [loki.write.default.receiver]
+// }
+
+// example: scrape a static log over http later, or add docker discovery.
+// leave sources commented until you have something real to ship.

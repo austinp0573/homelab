@@ -1,0 +1,6 @@
+.env
+*.log
+data/*
+!data/.gitkeep
+alloy-data/*
+!alloy-data/.gitkeep

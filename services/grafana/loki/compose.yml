@@ -1,0 +1,48 @@
+# deploy to /opt/loki/
+# copy .env.example to .env, then ./scripts/up.sh
+#
+# loki stores logs. alloy ships them (placeholder sources in config/config.alloy).
+
+services:
+  loki:
+    image: ${LOKI_IMAGE:-grafana/loki:3.4.3}
+    container_name: ${CONTAINER_NAME:-loki}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-3100}:3100"
+    command:
+      - -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./config/loki.yml:/etc/loki/loki.yml:ro
+      - ${DATA_DIR:-./data}:/loki
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null http://127.0.0.1:3100/ready || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  alloy:
+    image: ${ALLOY_IMAGE:-grafana/alloy:v1.8.3}
+    container_name: ${ALLOY_CONTAINER_NAME:-alloy}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    depends_on:
+      - loki
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${ALLOY_HOST_PORT:-12345}:12345"
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=0.0.0.0:12345
+    volumes:
+      - ./config/config.alloy:/etc/alloy/config.alloy:ro
+      - ${ALLOY_DATA_DIR:-./alloy-data}:/var/lib/alloy/data
+      # optional: uncomment to let alloy read host logs (see config.alloy)
+      # - /var/log:/var/log:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
