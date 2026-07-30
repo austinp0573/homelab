@@ -1,0 +1,20 @@
+# provisioned datasources. urls assume grafana uses network_mode: host
+# and prometheus/loki are listening on the host loopback (see sibling stacks).
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    isDefault: true
+    editable: true
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://127.0.0.1:3100
+    editable: true
