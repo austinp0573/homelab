@@ -1,0 +1,11 @@
+# HTTP basic auth for the UI
+# plaintext password lives in secrets/password.txt - never commit it
+# run: ./scripts/hash-password.sh
+#
+# default below is bcrypt+base64 for password: change-me-now
+# replace it before exposing the service
+
+security:
+  basic:
+    username: "admin"
+    password-bcrypt-base64: "JDJiJDEwJGJqc3JmbjVHWUxhaVhYQmdvRTVueU9NODRVZERmcEpUWU1tanBlbFhOQ3JZMGtwSHBqMjNp"

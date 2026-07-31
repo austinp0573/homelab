@@ -1,0 +1,6 @@
+.env
+*.log
+secrets/password.txt
+config/20-alerting.yaml
+data/*.db
+data/*.db-*

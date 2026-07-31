@@ -1,0 +1,13 @@
+# copy to 20-alerting.yaml and set your ntfy details
+# the real file is ignored because it can contain an access token
+
+alerting:
+  ntfy:
+    url: "https://ntfy.example.com"
+    topic: "gatus"
+    token: ""
+    priority: 3
+    default-alert:
+      failure-threshold: 3
+      success-threshold: 2
+      send-on-resolved: true
