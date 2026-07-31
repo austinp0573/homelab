@@ -1,0 +1,41 @@
+# deploy to /opt/grafana/
+# copy .env.example to .env, edit admin password, then ./scripts/up.sh
+#
+# network_mode: host so datasource URLs can be http://127.0.0.1:9090 and
+# http://127.0.0.1:3100 (prometheus / loki publish those on the host loopback).
+# see README.md "how the pieces talk".
+
+services:
+  grafana:
+    image: ${GRAFANA_IMAGE:-grafana/grafana:11.6.3}
+    container_name: ${CONTAINER_NAME:-grafana}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    network_mode: host
+    user: "472:472"
+    environment:
+      GF_SERVER_HTTP_ADDR: ${GF_SERVER_HTTP_ADDR:-127.0.0.1}
+      GF_SERVER_HTTP_PORT: ${GF_SERVER_HTTP_PORT:-3000}
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://127.0.0.1:3000}
+      GF_SERVER_DOMAIN: ${GF_SERVER_DOMAIN:-localhost}
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-changeme}
+      GF_USERS_ALLOW_SIGN_UP: ${GF_USERS_ALLOW_SIGN_UP:-false}
+      GF_AUTH_ANONYMOUS_ENABLED: ${GF_AUTH_ANONYMOUS_ENABLED:-false}
+      GF_INSTALL_PLUGINS: ${GF_INSTALL_PLUGINS:-}
+      GF_PATHS_DATA: /var/lib/grafana
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ${DATA_DIR:-./data}:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null http://127.0.0.1:${GF_SERVER_HTTP_PORT:-3000}/api/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
