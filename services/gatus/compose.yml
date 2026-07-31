@@ -1,0 +1,22 @@
+# deploy to /opt/gatus/
+# copy .env.example to .env, hash the password, edit config, then ./scripts/up.sh
+
+services:
+  gatus:
+    image: ${GATUS_IMAGE:-ghcr.io/twin/gatus:v5.35.0}
+    container_name: ${CONTAINER_NAME:-gatus}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:8080"
+    environment:
+      GATUS_CONFIG_PATH: /config
+    volumes:
+      - ./config:/config:ro
+      - ${DATA_DIR:-./data}:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # no gpu, no privileged - plain http service

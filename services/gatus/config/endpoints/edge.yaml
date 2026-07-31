@@ -1,0 +1,39 @@
+# edge front-door placeholders - replace example.com with real names
+# paths match services/edge/haproxy/backends.example.cfg where possible
+
+endpoints:
+  - name: headscale
+    group: edge
+    url: "https://headscale.example.com/health"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 2000"
+      - "[CERTIFICATE_EXPIRATION] > 48h"
+    alerts:
+      - type: ntfy
+        description: "headscale https check failed"
+
+  - name: vault
+    group: edge
+    url: "https://vault.example.com/alive"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 3000"
+      - "[CERTIFICATE_EXPIRATION] > 48h"
+    alerts:
+      - type: ntfy
+        description: "vault https check failed"
+
+  - name: bao
+    group: edge
+    url: "https://bao.example.com/v1/sys/health"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 3000"
+      - "[CERTIFICATE_EXPIRATION] > 48h"
+    alerts:
+      - type: ntfy
+        description: "bao https check failed"

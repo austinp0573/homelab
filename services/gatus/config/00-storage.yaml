@@ -1,0 +1,6 @@
+# sqlite history - survives container recreate
+storage:
+  type: sqlite
+  path: /data/gatus.db
+  maximum-number-of-results: 200
+  maximum-number-of-events: 100
