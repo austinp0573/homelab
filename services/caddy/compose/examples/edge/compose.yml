@@ -1,0 +1,17 @@
+# edge caddy - terminate tls, route by host
+# copy .env.example to .env, edit Caddyfile, run like the template
+
+services:
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:alpine}
+    container_name: ${CONTAINER_NAME:-caddy}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${HOST_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_DIR:-./data}:/data
+      - ${CONFIG_DIR:-./config}:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
