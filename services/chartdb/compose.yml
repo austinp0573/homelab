@@ -1,0 +1,37 @@
+# deploy to /opt/chartdb/
+# copy .env.example to .env, run ./scripts/htpasswd.sh, then ./scripts/up.sh
+#
+# auth sidecar is required. point your reverse proxy at AUTH_HOST_PORT.
+
+services:
+  chartdb:
+    image: ${CHARTDB_IMAGE:-ghcr.io/chartdb/chartdb:latest}
+    container_name: ${CHARTDB_CONTAINER_NAME:-chartdb}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8792}:80"
+    environment:
+      # leave AI blank, or set ONE of: OPENAI_API_KEY  XOR  OPENAI_API_ENDPOINT + LLM_MODEL_NAME
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_ENDPOINT: ${OPENAI_API_ENDPOINT:-}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME:-}
+      DISABLE_ANALYTICS: ${DISABLE_ANALYTICS:-true}
+      HIDE_CHARTDB_CLOUD: ${HIDE_CHARTDB_CLOUD:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  auth:
+    image: ${AUTH_IMAGE:-nginx:1.27-alpine}
+    container_name: ${AUTH_CONTAINER_NAME:-chartdb-auth}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    depends_on:
+      - chartdb
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${AUTH_HOST_PORT:-8793}:80"
+    volumes:
+      - ./auth/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./secrets/htpasswd:/etc/nginx/htpasswd:ro
