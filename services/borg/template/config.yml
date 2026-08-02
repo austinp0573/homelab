@@ -1,0 +1,103 @@
+# this file is mounted at /etc/borgmatic/config.yaml
+
+source_directories:
+  - /source/host/home
+  - /source/host/etc
+  - /source/app
+
+repositories:
+  - path: ${BORG_REMOTE_REPOSITORY}
+    label: ${BORG_REMOTE_REPOSITORY_LABEL}
+  - path: ${BORG_LOCAL_REPOSITORY}
+    label: ${BORG_LOCAL_REPOSITORY_LABEL}
+
+# use this only when backing up all of /source/host
+# exclude_patterns:
+#   - /source/host/dev
+#   - /source/host/proc
+#   - /source/host/sys
+#   - /source/host/run
+#   - /source/host/tmp
+#   - /source/host/var/tmp
+#   - /source/host/var/cache
+#   - /source/host/var/lib/docker/overlay2
+#   - /source/host/var/lib/containers/storage/overlay
+#   - /source/host/mnt
+#   - /source/host/media
+#   - /source/host/lost+found
+#   - /source/host/swapfile
+#   - /source/host/home/*/.cache
+#   - /source/host/home/*/.local/share/Trash
+#   - /source/host/root/.cache
+
+exclude_caches: true
+exclude_if_present:
+  - .nobackup
+
+# set this to true for single filesystem backups only
+one_file_system: false
+
+archive_name_format: ${ARCHIVE_NAME_FORMAT}-{now:%Y-%m-%dT%H:%M:%S}
+compression: ${BORG_COMPRESSION}
+ssh_command: ${BORG_SSH_COMMAND}
+encryption_passphrase: ${BORG_PASSPHRASE}
+
+# these values are here for server side maintenance notes
+# client runs should not use prune or compact with append only ssh users
+# keep_daily: 7
+# keep_weekly: 4
+# keep_monthly: 12
+# keep_yearly: 2
+
+checks:
+  - name: repository
+    frequency: 1 month
+  - name: archives
+    frequency: 1 month
+
+commands:
+  - before: action
+    when:
+      - create
+    run:
+      - echo backup starting
+  - after: action
+    when:
+      - create
+    run:
+      - echo backup finished
+  - after: error
+    run:
+      - echo backup failed
+
+# sqlite example
+# uncomment and point this at a mounted sqlite database
+# sqlite_databases:
+#   - name: app
+#     path: /source/app/app.db
+
+# healthchecks example
+# healthchecks:
+#   ping_url: ${HEALTHCHECKS_PING_URL}
+#   send_logs: true
+#   states:
+#     - start
+#     - finish
+#     - fail
+
+# ntfy example
+# ntfy:
+#   server: ${NTFY_SERVER}
+#   topic: ${NTFY_TOPIC}
+#   access_token: ${NTFY_ACCESS_TOKEN}
+#   states:
+#     - fail
+
+# apprise example
+# apprise:
+#   services:
+#     - url: ${APPRISE_URL}
+#       label: apprise
+#   send_logs: true
+#   states:
+#     - fail

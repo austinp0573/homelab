@@ -1,0 +1,68 @@
+x-borgmatic-common: &borgmatic-common
+  image: ${BORGMATIC_IMAGE:-ghcr.io/borgmatic-collective/borgmatic:latest}
+  user: "0:0"
+  hostname: ${CLIENT_HOSTNAME:-borgmatic-client}
+  env_file:
+    - .env
+  environment:
+    S6_KEEP_ENV: "1"
+    PUID: ${PUID:-0}
+    PGID: ${PGID:-0}
+    TZ: ${TZ:-UTC}
+    BORG_RELOCATED_REPO_ACCESS_IS_OK: "no"
+    BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK: "no"
+    BORG_REMOTE_REPOSITORY: ssh://${BORG_REMOTE_USER:-borg-user}@${TRUENAS_HOST:-10.0.0.1}:${BORG_REMOTE_PORT:-22}${BORG_REMOTE_REPO_PATH:-/mnt/coldpool/borg/lab/sample-host}
+    BORG_REMOTE_REPOSITORY_LABEL: ${BORG_REMOTE_REPOSITORY_LABEL:-truenas}
+    BORG_LOCAL_REPOSITORY: ${BORG_LOCAL_REPO_PATH:-/backup/repositories/sample-host}
+    BORG_LOCAL_REPOSITORY_LABEL: ${BORG_LOCAL_REPOSITORY_LABEL:-local}
+    BORG_ENCRYPTION: ${BORG_ENCRYPTION:-repokey-blake2}
+    BORG_COMPRESSION: ${BORG_COMPRESSION:-auto,zstd,6}
+    FILE__BORG_PASSPHRASE: ${BORG_PASSPHRASE_FILE:-/secrets/passphrase.txt}
+    BORG_SSH_COMMAND: ${BORG_SSH_COMMAND:-ssh -i /secrets/ssh/id_ed25519 -o UserKnownHostsFile=/secrets/ssh/known_hosts -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes}
+    ARCHIVE_NAME_FORMAT: ${ARCHIVE_NAME_FORMAT:-template-host}
+    BORG_CONFIG_DIR: /config/borg
+    BORG_CACHE_DIR: /cache/borg
+    BORG_SECURITY_DIR: /config/borg/security
+  volumes:
+    - ./config.yml:/etc/borgmatic/config.yaml:ro
+    - ./secrets:/secrets:ro
+    - ./runtime/borg-config:/config/borg:rw
+    - ./runtime/borg-cache:/cache/borg:rw
+    - ./runtime/borgmatic-state:/root/.local/state/borgmatic:rw
+    - ./runtime/logs:/var/log/borgmatic:rw
+    - ${HOST_ROOT:-/}:/source/host:ro
+    - ${APP_DATA_PATH:-/srv/example-app}:/source/app:ro
+    - ${LOCAL_REPO_ROOT:-./local-repositories}:/backup/repositories:rw
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,size=64m
+    - /run:rw,exec,nosuid,nodev,size=64m
+    - /etc/crontabs:rw,nosuid,nodev,noexec,size=1m
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  restart: ${RESTART_POLICY:-no}
+
+services:
+  borgmatic:
+    <<: *borgmatic-common
+    container_name: ${COMPOSE_PROJECT_NAME:-borgmatic-sample}
+    command:
+      - borgmatic
+      - --config
+      - /etc/borgmatic/config.yaml
+      - --verbosity
+      - ${BORGMATIC_VERBOSITY:-1}
+      - create
+      - check
+
+  borgmatic-scheduled:
+    <<: *borgmatic-common
+    container_name: ${COMPOSE_PROJECT_NAME:-borgmatic-sample}-scheduled
+    profiles:
+      - scheduled
+    command:
+      - /bin/sh
+      - -c
+      - while true; do echo backup starting; borgmatic --config /etc/borgmatic/config.yaml --verbosity "$${BORGMATIC_VERBOSITY:-1}" create check; echo backup finished; sleep "$${SCHEDULE_SECONDS:-86400}"; done
