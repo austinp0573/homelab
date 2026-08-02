@@ -1,0 +1,29 @@
+services:
+  borgmatic:
+    image: ghcr.io/borgmatic-collective/borgmatic:latest
+    container_name: borgmatic
+    hostname: ${HOSTNAME:-host}
+    restart: unless-stopped
+    environment:
+      TZ: America/Chicago
+      # default: daily at 2am, override per-host in .env or here directly
+      BACKUP_CRON: "${BACKUP_CRON:-0 2 * * *}"
+      # set to "true" for first deploy to verify the setup immediately.
+      # set to "false" in steady-state production.
+      RUN_ON_STARTUP: "${RUN_ON_STARTUP:-false}"
+      BORG_PASSPHRASE: "${BORG_PASSPHRASE}"
+    volumes:
+      - ./config:/etc/borgmatic.d
+      - ./ssh:/root/.ssh
+      - ./cache:/root/.cache/borg
+      # source data to back up
+      # mount everything you want backed up under /mnt/source/
+      # always :ro
+      # mounts must match source_directories in config.yaml
+      - /home:/mnt/source/home:ro
+      - /etc:/mnt/source/etc:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

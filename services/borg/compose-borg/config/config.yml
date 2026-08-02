@@ -1,0 +1,183 @@
+# https://torsion.org/borgmatic/reference/configuration/
+
+# source directories to backup,
+source_directories:
+    - /home
+    - /etc
+    - /var/log
+
+# paths to local or remote repositories,
+repositories:
+    - path: ssh://user@server/./repo
+      label: remote
+    - path: /local/backup/path
+      label: local
+
+# exclude directories containing a cache tag file,
+exclude_caches: true
+
+# exclude directories if this file is present,
+exclude_if_present:
+    - .nobackup
+
+# explicit patterns to drop from the stream,
+exclude_patterns:
+    - /home/*/.cache
+    - /tmp
+
+# do not cross filesystem boundaries,
+one_file_system: true
+
+# read symlinks as regular files,
+source_as_symlinks: false
+
+# keep numeric group and user identifiers,
+numeric_ids: true
+
+# compression algorithm and strength,
+compression: zstd,3
+
+# encryption credential passphrase string,
+encryption_passphrase: "changeme"
+
+# format layout used for backup labels,
+archive_name_format: "{hostname}-{now:%Y-%m-%d-%H%M%S}"
+
+# ssh shell execution string for remote endpoints,
+ssh_command: ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=yes
+
+# create a checkpoint after this many gigabytes,
+checkpoint_interval: 5
+
+# maximum size allowed for segment files,
+segment_size: 5000000
+
+# count of daily snapshots to preserve,
+keep_daily: 7
+
+# count of weekly snapshots to preserve,
+keep_weekly: 4
+
+# count of monthly snapshots to preserve,
+keep_monthly: 12
+
+# restrict pruning to matching prefix tags,
+prefix: "{hostname}-"
+
+# validation routines to run against data,
+checks:
+    - name: repository
+    - name: archives
+
+# constrain deep parsing to recent archives,
+check_last: 3
+
+# frequency in days for full verification,
+check_frequency: 7
+
+# commands executed before data transfer begins,
+before_backup:
+    - echo starting
+
+# commands executed after successful cycles,
+after_backup:
+    - echo finished
+
+# commands executed if a failure occurs,
+on_error:
+    - echo failed
+
+# drop actions that violate remote access controls,
+skip_actions:
+    - compact
+
+source_directories:
+    - /home
+    - /etc
+
+# Paths of local or remote repositories to backup to.
+repositories:
+    - path: ssh://k8pDxu32@k8pDxu32.repo.borgbase.com/./repo
+      label: borgbase
+    - path: /var/lib/backups/local.borg
+      label: local
+
+# Retention policy for how many backups to keep.
+keep_daily: 7
+keep_weekly: 4
+keep_monthly: 6
+
+# List of checks to run to validate your backups.
+checks:
+    - name: repository
+    - name: archives
+      frequency: 2 weeks
+
+# Custom preparation scripts to run.
+commands:
+    - before: action
+      when: [create]
+      run: [prepare-for-backup.sh]
+
+# Databases to dump and include in backups.
+postgresql_databases:
+    - name: users
+
+# Third-party services to notify you if backups aren't happening.
+healthchecks:
+    ping_url: https://hc-ping.com/be067061-cf96-4412-8eae-62b0c50d6a8c
+
+source_directories:
+  - /mnt/source/home
+  - /mnt/source/etc
+
+exclude_patterns:
+  - /mnt/source/home/*/.cache
+  - /mnt/source/home/*/.cargo/registry
+  - /mnt/source/home/*/.npm
+  - /mnt/source/home/*/.gradle
+  - /mnt/source/home/*/node_modules
+  - /mnt/source/home/*/.mozilla/firefox/*/cache2
+  - /mnt/source/home/*/.config/google-chrome/*/Cache
+  - /mnt/source/home/*/.config/BraveSoftware/*/Cache
+  - /mnt/source/home/*/.var/app/*/cache
+  - /mnt/source/home/*/.cache/huggingface
+  - /mnt/source/home/*/ComfyUI/models
+  - /mnt/source/home/*/.venv
+  - /mnt/source/home/*/venv
+  - /mnt/source/home/*/env
+  - /mnt/source/home/*/.local/share/containers
+  - '*.pyc'
+  - '__pycache__'
+  - '*.tmp'
+  - '.DS_Store'
+
+exclude_if_present:
+  - .nobackup
+  - CACHEDIR.TAG
+
+repositories:
+  # borgbackup-admin user, borgmatic/admin dataset
+  - path: ssh://borgbackup-admin@<TRUENAS_IP>/mnt/20tb-pool/borgmatic/admin/workstation
+    label: truenas-admin-workstation
+
+archive_name_format: '{hostname}-{now:%Y-%m-%dT%H:%M:%S}'
+
+compression: lz4
+
+# Retention for a primary workstation
+keep_daily: 7
+keep_weekly: 4
+keep_monthly: 6
+keep_yearly: 1
+prefix: '{hostname}-'
+
+checks:
+  - name: repository
+    frequency: 2 weeks
+  - name: archives
+    frequency: 4 weeks
+  - name: data
+    frequency: 6 months
+
+ssh_command: ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=60 -o ServerAliveCountMax=3
