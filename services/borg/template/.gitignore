@@ -1,0 +1,12 @@
+.env
+*.env
+runtime/
+local-repositories/
+logs/
+*.log
+secrets/passphrase.txt
+secrets/**/*.key
+secrets/ssh/id_*
+!secrets/ssh/*.example
+!secrets/**/*.example
+!secrets/**/README.md
