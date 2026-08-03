@@ -1,8 +1,8 @@
 services:
   comfyui:
-    image: ${COMFYUI_IMAGE}
-    container_name: comfyui-rocm
-    restart: unless-stopped
+    image: ${COMFYUI_IMAGE:-rocm/comfyui:comfyui-0.18.2.amd0_rocm7.2.0_ubuntu24.04}
+    container_name: ${CONTAINER_NAME:-comfyui-rocm}
+    restart: ${RESTART_POLICY:-unless-stopped}
     devices:
       - /dev/kfd:/dev/kfd
       - /dev/dri:/dev/dri
@@ -15,10 +15,20 @@ services:
     security_opt:
       - seccomp=unconfined
     ports:
-      - ${COMFYUI_PORTS}
+      - "${COMFYUI_BIND:-127.0.0.1}:${COMFYUI_PORT:-8188}:8188"
     volumes:
-      - /opt/comfyui/data/models:/mnt/models
-    command: >
-      sh -c "rm -rf $$COMFYUI_PATH/models && 
-      ln -s /mnt/models $$COMFYUI_PATH/models && 
-      python $$COMFYUI_PATH/main.py --listen 0.0.0.0 --port 8188"
+      - ${COMFYUI_DATA_DIR:-/opt/comfyui/data}:/data
+    environment:
+      HIP_VISIBLE_DEVICES: ${HIP_VISIBLE_DEVICES:-0}
+      HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION:-}
+    command:
+      - sh
+      - -ec
+      - |
+        mkdir -p /data/models /data/input /data/output /data/user
+        rm -rf "$$COMFYUI_PATH/models" "$$COMFYUI_PATH/input" "$$COMFYUI_PATH/output" "$$COMFYUI_PATH/user"
+        ln -s /data/models "$$COMFYUI_PATH/models"
+        ln -s /data/input "$$COMFYUI_PATH/input"
+        ln -s /data/output "$$COMFYUI_PATH/output"
+        ln -s /data/user "$$COMFYUI_PATH/user"
+        exec python "$$COMFYUI_PATH/main.py" --listen 0.0.0.0 --port 8188
