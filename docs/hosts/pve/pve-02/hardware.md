@@ -27,3 +27,5 @@
 
 - As described [here](https://www.dell.com/community/en/conversations/optiplex-desktops/25gb-lan-card-in-wifi-slot-optiplex-7080/67374109520b7c11ac4cfce0), OptiPlex 7080s don't play nice with M.2 to Ethernet adapters. A B+M key adapter in the M.2 NVMe SSD slot was only ever recognized at 10Mbps by the Mikrotik switch; all other machines using the same adapter auto-negotiated without issue.
 - Returned the B+M key adapter and ordered an A+E key adapter.
+
+* Make sure the BIOS has the wifi adpater enabled and the bluetooth **disabled**, and make sure to enable the NIC on PVE.
