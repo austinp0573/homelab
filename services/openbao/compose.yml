@@ -1,0 +1,49 @@
+services:
+  openbao:
+    image: openbao/openbao:latest
+    container_name: openbao
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "80:8200"
+    volumes:
+      - ./openbao/config:/openbao/config
+      - openbao-data:/openbao/data
+      - openbao-logs:/openbao/logs
+    environment:
+      BAO_LOCAL_CONFIG: |
+        listener "tcp" {
+          address = "0.0.0.0:8200"
+          tls_disable = true
+        }
+        storage "raft" {
+          path = "/openbao/data"
+          node_id = "openbao-node-1"
+        }
+        cluster_addr = "http://openbao:8201"
+        api_addr = "http://openbao:8200"
+        disable_mlock = false
+    command: server
+    networks:
+      - openbao-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: your-cloudflare-tunnel-token-here
+    depends_on:
+      - openbao
+    networks:
+      - openbao-net
+
+networks:
+  openbao-net:
+    driver: bridge
+
+volumes:
+  openbao-data:
+  openbao-logs:
