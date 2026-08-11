@@ -10,6 +10,10 @@
 #   3. docker cp main.<hash>.js <container>:/web-vault/app/main.<hash>.js
 #
 # Re-run safely: keeps main.<hash>.js.orig from the first run and patches from that.
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# FLUSH CLOUDFLARE CACHE FOR THE HOST
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 set -eu
 
@@ -71,32 +75,30 @@ cp "$ORIG" "$MAIN_JS"
 TMP=$(mktemp)
 trap 'rm -f "$TMP"' EXIT INT HUP TERM
 
-# Fixed patches (encrypt + warning banner logic)
-sed \
-	-e 's/a\.hideEmail=e\.hideEmail,a\.maxAccessCount/a.hideEmail=!0,a.maxAccessCount/g' \
-	-e 's/this\.hideEmail=(0,Rp\.EW)(()=>null!=this\.send()&&null==this\.creatorIdentifier())/this.hideEmail=(0,Rp.EW)(()=>!1)/g' \
-	-e 's/B\.vxM(-1),B\.R7\$(),B\.vxM(t\.loading()?1:2)/B.vxM(t.hideEmail()?0:-1),B.R7$(),B.vxM(t.loading()?1:2)/g' \
+# Flexible regex patches:
+# 1. Force hideEmail=true when saving sends
+# 2. Force hideEmail getter/computed signal to return false (hides callout warning banner)
+# 3. Replace sendAccessCreatorIdentifier i18n subtitle anchor (or prior custom text) with new custom plain-text subtitle
+sed -E \
+	-e 's/([a-zA-Z0-9_\$]+\.hideEmail=)[a-zA-Z0-9_\$]+\.hideEmail(,[a-zA-Z0-9_\$]+\.maxAccessCount)/\1!0\2/g' \
+	-e 's/this\.hideEmail=\(0,([a-zA-Z0-9_\$]+)\.EW\)\(\(\)=>null!=this\.send\(\)&&null==this\.creatorIdentifier\(\)\)/this.hideEmail=(0,\1.EW)(()=>!1)/g' \
+	-e 's|const [a-zA-Z0-9_\$]+=this\.creatorIdentifier\(\);null!=[a-zA-Z0-9_\$]+&&this\.layoutWrapperDataService\.setAnonLayoutWrapperData\(\{pageSubtitle:\{key:"sendAccessCreatorIdentifier",placeholders:\[[a-zA-Z0-9_\$]+\]\}\}\)|'"${SUBTITLE_SED}"'|g' \
+	-e 's|this\.layoutWrapperDataService\.setAnonLayoutWrapperData\(\{pageSubtitle:"[^"]*"\}\)|'"${SUBTITLE_SED}"'|g' \
 	"$MAIN_JS" > "$TMP"
 
-# Subtitle: replace any prior patch variant with the new custom plain-text subtitle.
-# Order matters: more specific patterns first.
-sed \
-	-e "s|const e=this\\.creatorIdentifier();null!=e&&this\\.layoutWrapperDataService\\.setAnonLayoutWrapperData({pageSubtitle:{key:\"sendAccessCreatorIdentifier\",placeholders:\\[e\\]}})|${SUBTITLE_SED}|g" \
-	-e "s|const e=\"[^\"]*\";null!=e&&this\\.layoutWrapperDataService\\.setAnonLayoutWrapperData({pageSubtitle:{key:\"sendAccessCreatorIdentifier\",placeholders:\\[e\\]}})|${SUBTITLE_SED}|g" \
-	-e "s|this\\.layoutWrapperDataService\\.setAnonLayoutWrapperData({pageSubtitle:\"[^\"]*\"})|${SUBTITLE_SED}|g" \
-	"$TMP" > "$MAIN_JS"
+mv "$TMP" "$MAIN_JS"
 
 # Verify required changes landed
 FAIL=0
-grep -q 'a\.hideEmail=!0,a\.maxAccessCount' "$MAIN_JS" || {
+grep -E -q '[a-zA-Z0-9_\$]+\.hideEmail=!0,[a-zA-Z0-9_\$]+\.maxAccessCount' "$MAIN_JS" || {
 	echo "error: patch failed — could not force hideEmail on save" >&2
 	FAIL=1
 }
-grep -q 'this\.hideEmail=(0,Rp\.EW)(()=>!1)' "$MAIN_JS" || {
+grep -E -q 'this\.hideEmail=\(0,[a-zA-Z0-9_\$]+\.EW\)\(\(\)=>!1\)' "$MAIN_JS" || {
 	echo "error: patch failed — could not disable warning banner logic" >&2
 	FAIL=1
 }
-grep -qF "$SUBTITLE_PATCH" "$MAIN_JS" || {
+grep -F -q "$SUBTITLE_PATCH" "$MAIN_JS" || {
 	echo "error: patch failed — could not set custom subtitle text" >&2
 	echo "       (sendAccessCreatorIdentifier anchor not found in bundle?)" >&2
 	FAIL=1
@@ -111,5 +113,13 @@ if [ "$FAIL" -ne 0 ]; then
 	exit 1
 fi
 
+chmod 644 "$MAIN_JS"
+
 echo "Patched: $MAIN_JS"
 echo "Subtitle: $TEXT"
+
+printf '\n\n%s\n%s\n%s\n' \
+	'!!!!!!!!!!!!!!!!!!!!!!!!!!' \
+	'FLUSH THE CLOUDFLARE CACHE' \
+	'!!!!!!!!!!!!!!!!!!!!!!!!!!'
+

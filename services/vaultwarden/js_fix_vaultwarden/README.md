@@ -58,6 +58,10 @@ VAULTWARDEN_SEND_SUBTITLE='Your full custom message here.' ./patch-send-main.sh 
 nerdctl cp ./main.XXXXXXXX.js vaultwarden:/web-vault/app/main.XXXXXXXX.js
 ```
 
+**IMPORTANT: If still using Cloudflare:**
+
+- Flush the cache for that host.
+
 Re-run with a new message anytime. It always patches from the `.orig` backup, so wording can be updated without re-extracting from the container.
 
 **Notes:**
