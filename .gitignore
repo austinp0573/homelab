@@ -43,3 +43,5 @@ docs/services/truenas/*
 scripts/legacy/
 *env/
 *.age
+!.sops.env
+CLEANUP.md
