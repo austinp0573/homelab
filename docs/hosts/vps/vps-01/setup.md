@@ -1,9 +1,8 @@
 # vps-01
 
-- Networking: Highest
-- Everything else lowest
+scripts/debian/minimal-debian/pack.sh
 
-- OS alpine 3.23.4
+move send.tar to vps
 
-run the scripts
+run with configurations
 
