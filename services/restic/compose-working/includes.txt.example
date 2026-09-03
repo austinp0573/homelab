@@ -1,0 +1,8 @@
+# paths to back up in the host profile
+# these are paths inside the container, where the host is mounted at /host
+
+/host/etc
+/host/home
+/host/root
+/host/srv
+/host/opt
