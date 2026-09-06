@@ -1,0 +1,23 @@
+services:
+  resticprofile:
+    build: .
+    image: homelab/resticprofile:latest
+    container_name: resticprofile
+    hostname: ${RESTIC_HOST:-restic_backup}
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      TMPDIR: /cache
+    volumes:
+      - ${HOST_ROOT:-/}:/host:ro
+      - ./profiles.yml:/etc/resticprofile/profiles.yml:ro
+      - ./excludes.txt:/etc/resticprofile/excludes.txt:ro
+      - ./includes.txt:/etc/resticprofile/includes.txt:ro
+      - ./secrets:/run/secrets:ro
+      - ./secrets/ssh:/root/.ssh:ro
+      - ./certs:/certs:ro
+      - ./scripts:/scripts:ro
+      - ./staging:/staging
+      - ./cache:/cache
+      - ${LOCAL_BACKUP_HOST_PATH:-/var/backups/restic}:/local-backups

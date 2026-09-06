@@ -1,0 +1,2 @@
+# place public ca certificates here
+# if not applicable, remove the "insecure-tls" from the options 

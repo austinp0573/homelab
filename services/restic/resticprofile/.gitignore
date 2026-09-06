@@ -1,0 +1,43 @@
+# environment variables and local configuration
+
+.env
+
+# host-specific backup path lists
+
+includes.txt
+excludes.txt
+
+# secret material
+
+secrets/*
+!secrets/*.example
+!secrets/README
+!secrets/ssh/
+
+secrets/ssh/*
+!secrets/ssh/*.example
+!secrets/ssh/README
+
+# certificates
+
+certs/*
+!certs/README
+
+# staging data
+
+staging/*
+!staging/.gitkeep
+
+# cache data
+
+cache/*
+!cache/.gitkeep
+
+# log files and local state
+
+*.log
+*.log.*
+.DS_Store
+compare.compose.yml
+compare/
+profile.y*ml

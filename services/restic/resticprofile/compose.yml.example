@@ -1,0 +1,38 @@
+services:
+  resticprofile:
+    build: .
+    image: homelab/resticprofile:latest
+    container_name: resticprofile
+    hostname: ${RESTIC_HOST:-restic_backup}
+    restart: "no"
+    env_file:
+      - .env
+      - ./secrets/rest_secrets.env
+    environment:
+      - RESTIC_CACHE_DIR=/cache
+      - TMPDIR=/cache
+      - RESTIC_HOST=${RESTIC_HOST:-restic_backup}
+      - TZ=${TZ:-${TIMEZONE:-Etc/UTC}}
+      - STAGING_DIR
+      - REST_URL
+      - RESTIC_REST_USERNAME
+      - RESTIC_REST_PASSWORD
+      - S3_BUCKET_URL
+      - SFTP_HOST_ALIAS
+      - SFTP_PATH
+      - LOCAL_BACKUP_PATH
+      - NTFY_URL
+      - NTFY_TOPIC
+      - RESTIC_PASSWORD
+    volumes:
+      - ${HOST_ROOT:-/}:/host:ro
+      - ./profiles.yml:/etc/resticprofile/profiles.yml:ro
+      - ./excludes.txt:/etc/resticprofile/excludes.txt:ro
+      - ./includes.txt:/etc/resticprofile/includes.txt:ro
+      - ./secrets:/run/secrets:ro
+      - ./secrets/ssh:/root/.ssh:ro
+      - ./certs:/certs:ro
+      - ./scripts:/scripts:ro
+      - ./staging:/staging
+      - ./cache:/cache
+      - ${LOCAL_BACKUP_HOST_PATH:-/var/backups/restic}:/local-backups
