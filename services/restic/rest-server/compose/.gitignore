@@ -1,0 +1,10 @@
+.env
+data/*
+!data/.gitkeep
+secrets/.htpasswd
+secrets/*.key
+secrets/*.crt
+secrets/*.txt
+!secrets/.gitkeep
+!secrets/.htpasswd.example
+*.log

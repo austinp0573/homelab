@@ -1,0 +1,12 @@
+services: 
+  restic-rest-server:
+    image: restic/rest-server:latest
+    container_name: restic-rest-server
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${HOST_BIND}:${HOST_PORT}:8000"
+    volumes:
+      - ${DATA_DIR:-./data}:/data
+      - ./secrets/.htpasswd:/run/secrets/.htpasswd
