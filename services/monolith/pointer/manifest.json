@@ -1,0 +1,15 @@
+{
+  "short_name": "Pointer Pointer",
+  "name": "Pointer Pointer",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#000000"
+}
