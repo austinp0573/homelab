@@ -1,0 +1,32 @@
+include "/etc/bind/clients.conf";
+include "/run/secrets/transfer.key";
+
+options {
+    directory "/var/cache/bind";
+    pid-file "/var/cache/bind/named.pid";
+    session-keyfile "/var/cache/bind/session.key";
+    listen-on port 5353 { ${NODE_IPV4}; };
+    listen-on-v6 { none; };
+    query-source-v6 none;
+    notify-source ${NODE_IPV4};
+    transfer-source ${NODE_IPV4};
+    recursion no;
+    allow-query { dns_clients; };
+    allow-query-cache { none; };
+    allow-transfer { none; };
+    dnssec-validation no;
+    notify no;
+    version none;
+    hostname none;
+    server-id none;
+    querylog no;
+    zone-statistics full;
+};
+
+controls { };
+
+statistics-channels {
+    inet ${NODE_IPV4} port 8054 allow { 127.0.0.1; ${NODE_IPV4}; };
+};
+
+include "/etc/bind/zones.conf";

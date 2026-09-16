@@ -1,0 +1,5 @@
+$ORIGIN k8s.tusko.org.
+$TTL 60
+@ IN SOA dns-primary.mgmt.tusko.org. hostmaster.tusko.org. (2026101201 300 300 1209600 60)
+@ IN NS dns-primary.mgmt.tusko.org.
+@ IN NS dns-secondary.mgmt.tusko.org.

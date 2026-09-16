@@ -1,0 +1,50 @@
+name: tusko-dns
+
+x-bind: &bind
+  image: ${BIND_IMAGE:?set BIND_IMAGE}
+  network_mode: host
+  user: "0:0"
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  cap_add: [NET_BIND_SERVICE, SETUID, SETGID]
+  security_opt: [no-new-privileges]
+  pids_limit: 128
+  cpus: 1.0
+  stop_grace_period: 30s
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  authoritative:
+    <<: *bind
+    mem_limit: 256m
+    volumes:
+      - ./auth:/etc/bind:ro
+      - ./zones:/zones:ro
+      - ./secrets:/run/secrets:ro
+      - ${DATA_DIR:-/opt/dns/data}/auth-cache:/var/cache/bind
+      - ${DATA_DIR:-/opt/dns/data}/auth-lib:/var/lib/bind
+    healthcheck:
+      test: [CMD-SHELL, "dig @${NODE_IPV4:?set NODE_IPV4} -p 5353 mgmt.tusko.org SOA +norecurse +time=2 +tries=1 +short | grep -q '^dns-primary.mgmt.tusko.org\\.'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  recursive:
+    <<: *bind
+    mem_limit: 512m
+    volumes:
+      - ./resolver:/etc/bind:ro
+      - ${DATA_DIR:-/opt/dns/data}/resolver-cache:/var/cache/bind
+      - ${DATA_DIR:-/opt/dns/data}/resolver-lib:/var/lib/bind
+    healthcheck:
+      test: [CMD-SHELL, "dig @${NODE_IPV4:?set NODE_IPV4} mgmt.tusko.org SOA +time=2 +tries=1 +short | grep -q '^dns-primary.mgmt.tusko.org\\.'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

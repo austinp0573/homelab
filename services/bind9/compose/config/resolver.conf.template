@@ -1,0 +1,35 @@
+include "/etc/bind/clients.conf";
+
+options {
+    directory "/var/cache/bind";
+    pid-file "/var/cache/bind/named.pid";
+    session-keyfile "/var/cache/bind/session.key";
+    managed-keys-directory "/var/cache/bind";
+    listen-on port 53 { ${NODE_IPV4}; };
+    listen-on-v6 { none; };
+    query-source-v6 none;
+    recursion yes;
+    allow-query { dns_clients; };
+    allow-recursion { dns_clients; };
+    allow-query-cache { dns_clients; };
+    allow-transfer { none; };
+    dnssec-validation auto;
+    validate-except {
+        ${VALIDATION_EXCEPTIONS}
+    };
+    max-cache-size 128M;
+    max-ncache-ttl 300;
+    minimal-responses yes;
+    version none;
+    hostname none;
+    server-id none;
+    querylog no;
+};
+
+controls { };
+
+statistics-channels {
+    inet ${NODE_IPV4} port 8053 allow { 127.0.0.1; ${NODE_IPV4}; };
+};
+
+include "/etc/bind/forward-zones.conf";

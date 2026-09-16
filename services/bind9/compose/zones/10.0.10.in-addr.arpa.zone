@@ -1,0 +1,8 @@
+$ORIGIN 10.0.10.in-addr.arpa.
+$TTL 300
+@ IN SOA dns-primary.mgmt.tusko.org. hostmaster.tusko.org. (2026101201 300 300 1209600 300)
+@ IN NS dns-primary.mgmt.tusko.org.
+@ IN NS dns-secondary.mgmt.tusko.org.
+21 IN PTR pve-01.mgmt.tusko.org.
+22 IN PTR pve-02.mgmt.tusko.org.
+23 IN PTR pve-03.mgmt.tusko.org.

@@ -1,0 +1,7 @@
+mgmt.tusko.org mgmt.tusko.org.zone
+dmz.tusko.org dmz.tusko.org.zone
+10.0.10.in-addr.arpa 10.0.10.in-addr.arpa.zone
+20.0.10.in-addr.arpa 20.0.10.in-addr.arpa.zone
+30.0.10.in-addr.arpa 30.0.10.in-addr.arpa.zone
+40.0.10.in-addr.arpa 40.0.10.in-addr.arpa.zone
+90.0.10.in-addr.arpa 90.0.10.in-addr.arpa.zone

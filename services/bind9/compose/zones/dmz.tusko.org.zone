@@ -1,0 +1,9 @@
+$ORIGIN dmz.tusko.org.
+$TTL 300
+@ IN SOA dns-primary.mgmt.tusko.org. hostmaster.tusko.org. (2026101201 300 300 1209600 300)
+@ IN NS dns-primary.mgmt.tusko.org.
+@ IN NS dns-secondary.mgmt.tusko.org.
+mtl-01 IN A 10.0.90.15
+vm-05 IN A 10.0.90.11
+vm-06 IN A 10.0.90.12
+homelable IN CNAME vm-06

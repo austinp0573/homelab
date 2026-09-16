@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+description="tusko DNS Compose boot reconciliation"
+
+depend() {
+    need net containerd
+    after firewall
+}
+
+start() {
+    ebegin "Starting tusko DNS"
+    (
+        cd /opt/dns/current || exit 1
+        nerdctl --namespace dns compose -p tusko-dns up -d --pull never
+    )
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping tusko DNS"
+    (
+        cd /opt/dns/current || exit 1
+        nerdctl --namespace dns compose -p tusko-dns stop
+    )
+    eend $?
+}
