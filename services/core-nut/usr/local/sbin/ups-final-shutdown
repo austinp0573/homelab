@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /opt/eneru/nut/control.env
+
+NERDCTL="$(command -v nerdctl)"
+
+logger -t eneru \
+    "Requesting Eaton UPS shutdown/return before powering off sbc-02"
+
+"$NERDCTL" exec eneru-nut \
+    upscmd \
+    -u "$NUT_USER" \
+    -p "$NUT_PASSWORD" \
+    eaton@127.0.0.1 \
+    driver.killpower
+
+logger -t eneru \
+    "UPS accepted killpower request; powering off sbc-02"
+
+systemctl poweroff

@@ -1,0 +1,66 @@
+services:
+  nut:
+    build:
+      context: ./nut
+    image: localhost/eneru-nut:alpine-3.24
+    container_name: nut
+    user: root
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./nut/config:/config:ro
+    # healthcheck:
+    #   test:
+    #     - CMD-SHELL
+    #     - upsc eaton@127.0.0.1 ups.status >/dev/null 2>&1 || exit 1
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 30s
+
+  eneru:
+    image: ghcr.io/m4r1k/eneru:latest
+    container_name: eneru
+    user: root
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - nut
+    healthcheck:
+      disable: true
+    volumes:
+      - /etc/machine-id:/etc/machine-id:ro
+      - ./eneru/config.yaml:/etc/ups-monitor/config.yaml:ro
+      - ./eneru/state:/var/lib/eneru
+      - ./eneru/run:/var/run/eneru
+      - ./eneru/ssh:/var/lib/eneru/ssh
+    command:
+      - run
+      - --config
+      - /etc/ups-monitor/config.yaml
+      - --api
+      - --api-bind
+      - "127.0.0.1"
+      - --api-port
+      - "9191"
+
+  caddy:
+    image: caddy:alpine
+    container_name: caddy
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - eneru
+    # environment:
+    #   - GOMEMLIMIT=64MiB
+    #   - GOGC=80
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 128M
+    #     reservations:
+    #       memory: 32M
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data
+      - ./caddy/config:/config
