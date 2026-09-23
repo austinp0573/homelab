@@ -1,0 +1,8 @@
+{
+  "maxCostUsd": 5.00,
+  "mode": "enforce",
+  "warningThresholds": [
+    0.70,
+    0.90
+  ]
+}

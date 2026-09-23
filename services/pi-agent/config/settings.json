@@ -1,0 +1,23 @@
+{
+  "defaultProjectTrust": "never",
+
+  "enableInstallTelemetry": false,
+
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  },
+
+  "packages": [
+    "/opt/pi-packages/node_modules/@gotgenes/pi-permission-system",
+    "/opt/pi-packages/node_modules/@juicesharp/rpiv-ask-user-question",
+    "/opt/pi-packages/node_modules/@juicesharp/rpiv-todo",
+    "/opt/pi-packages/node_modules/pi-budget-guard",
+    "/opt/pi-packages/node_modules/pi-exa",
+    {
+      "source": "/opt/pi-packages/node_modules/pi-mcp-adapter",
+      "skills": []
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "hostConfigDiscovery": "off",
+    "directTools": false,
+    "scriptMode": false,
+    "approveTools": true,
+    "sampling": false,
+    "autoAuth": false,
+    "outputGuard": true,
+    "mcpFooterStatus": "compact",
+    "notifyOnStartupConnect": false
+  },
+
+  "mcpServers": {}
+}

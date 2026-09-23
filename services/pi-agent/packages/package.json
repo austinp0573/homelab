@@ -1,0 +1,13 @@
+{
+  "name": "pi-agent-packages",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@gotgenes/pi-permission-system": "26.2.0",
+    "@juicesharp/rpiv-ask-user-question": "2.6.0",
+    "@juicesharp/rpiv-todo": "2.6.0",
+    "pi-budget-guard": "0.2.1",
+    "pi-exa": "0.6.1",
+    "pi-mcp-adapter": "2.26.0"
+  }
+}

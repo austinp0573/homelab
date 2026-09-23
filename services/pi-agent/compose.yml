@@ -1,0 +1,55 @@
+services:
+  pi:
+    build:
+      context: .
+      args:
+        PUID: ${PUID:-1000}
+        PGID: ${PGID:-1000}
+
+    image: local/pi-agent:latest
+
+    init: true
+    stdin_open: true
+    tty: true
+
+    restart: unless-stopped
+
+    working_dir: /workspace/${PROJECT_SLUG:-project}
+
+    environment:
+      HOME: /home/pi
+      XDG_CONFIG_HOME: /home/pi/.config
+      PI_CODING_AGENT_DIR: /home/pi/.pi/agent
+      PI_TELEMETRY: "0"
+
+      EDITOR: vim
+      VISUAL: vim
+      TERM: ${TERM:-xterm-256color}
+
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      EXA_API_KEY: ${EXA_API_KEY:-}
+
+    volumes:
+      # The only project/data tree Pi receives from the host.
+      - ./workspace:/workspace/${PROJECT_SLUG:-project}:rw
+
+      # Persistent Pi runtime/session/auth state.
+      - ./state/agent:/home/pi/.pi/agent:rw
+
+      # Persistent XDG configuration used by extensions.
+      - ./state/config:/home/pi/.config:rw
+
+      # Declaratively managed Pi configuration.
+      - ./config/settings.json:/home/pi/.pi/agent/settings.json:ro
+      - ./config/models.json:/home/pi/.pi/agent/models.json:ro
+      - ./config/AGENTS.md:/home/pi/.pi/agent/AGENTS.md:ro
+      - ./config/budget.json:/home/pi/.pi/agent/budget.json:ro
+      - ./config/mcp.json:/home/pi/.pi/agent/mcp.json:ro
+      - ./config/prompts:/home/pi/.pi/agent/prompts:ro
+
+      # Permission policy is managed separately while its logs remain writable.
+      - ./config/permission-system.json:/home/pi/.pi/agent/extensions/pi-permission-system/config.json:ro
+
+    pids_limit: 2048

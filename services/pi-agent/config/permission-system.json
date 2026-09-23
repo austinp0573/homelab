@@ -1,0 +1,112 @@
+{
+  "debugLog": false,
+  "permissionReviewLog": true,
+  "yoloMode": false,
+  "doublePressToConfirm": true,
+  "forwardingTimeoutMs": 600000,
+  "piInfrastructureReadPaths": [],
+  "authorizerChain": [],
+
+  "permission": {
+    "*": "allow",
+
+    "path": {
+      "*": "allow",
+
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+
+      "*.pem": "deny",
+      "*.key": "deny",
+      "*.p12": "deny",
+      "*.pfx": "deny",
+
+      "*/secrets/*": "deny",
+      "*/credentials/*": "deny",
+      "*/.ssh/*": "deny",
+
+      "/home/pi/.ssh/*": "deny",
+      "/home/pi/.pi/agent/auth.json": "deny"
+    },
+
+    "bash": {
+      "*": "ask",
+
+      "pwd": "allow",
+      "whoami": "allow",
+      "id": "allow",
+      "uname *": "allow",
+
+      "ls *": "allow",
+      "grep *": "allow",
+      "rg *": "allow",
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "wc *": "allow",
+      "file *": "allow",
+      "stat *": "allow",
+
+      "git *": {
+        "action": "deny",
+        "reason": "Git is read-only by default; the user owns Git mutations."
+      },
+
+      "git status *": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "git show *": "allow",
+      "git grep *": "allow",
+      "git ls-files *": "allow",
+      "git ls-tree *": "allow",
+      "git rev-parse *": "allow",
+      "git branch --show-current *": "allow",
+
+      "git clone *": "ask",
+
+      "sudo *": "ask",
+
+      "sudo -i *": {
+        "action": "deny",
+        "reason": "Persistent root shells are disabled."
+      },
+
+      "sudo -s *": {
+        "action": "deny",
+        "reason": "Persistent root shells are disabled."
+      },
+
+      "sudo bash *": {
+        "action": "deny",
+        "reason": "Persistent root shells are disabled."
+      },
+
+      "sudo sh *": {
+        "action": "deny",
+        "reason": "Persistent root shells are disabled."
+      },
+
+      "sudo /bin/bash *": {
+        "action": "deny",
+        "reason": "Persistent root shells are disabled."
+      },
+
+      "sudo /bin/sh *": {
+        "action": "deny",
+        "reason": "Persistent root shells are disabled."
+      },
+
+      "su *": {
+        "action": "deny",
+        "reason": "Persistent root shells are disabled."
+      }
+    },
+
+    "external_directory": {
+      "*": "ask",
+      "/tmp/*": "allow",
+      "/var/tmp/*": "allow"
+    }
+  }
+}
