@@ -1,0 +1,82 @@
+# 30-endpoints-local.yaml
+
+endpoints:
+  - name: vps-01_restic_rest_server_localhost
+    group: vps-01
+    url: "http://127.0.0.1:8000"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 401"
+      - "[RESPONSE_TIME] < 3000"
+    alerts:
+      - type: ntfy
+        description: "vps-03_restic-rest-lo failed"
+        
+  - name: vps-01_ntfy_localhost
+    group: vps-01
+    url: "http://127.0.0.1:2586"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+    alerts:
+      - type: ntfy
+        description: "vps-01 ntfy localhost failure"
+        
+  - name: vps-01_tailscale_localhost
+    group: vps-01
+    url: "http://localhost:9028/healthz"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+    alerts:
+      - type: ntfy
+        description: "vps-01 tailscale localhost failed"
+
+  - name: vps-01_stats_localhost
+    group: vps-01
+    url: "http://localhost:7890"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 400"
+      - "[RESPONSE_TIME] < 5000"
+    alerts:
+      - type: ntfy
+        description: "vps-01 stats localhost failed"
+
+  - name: vps-01_caddy_auth_https
+    group: vps-01
+    url: "https://auth.tusko.org"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "vps-01 auth.tusko.org check failed"
+
+  - name: vps-01_ntfy
+    group: vps-01
+    url: "https://ntfy.tusko.org"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "vps-01 ntfy front end failure"
+
+  - name: vps-01_restic-rest_https
+    group: vps-01
+    url: "https://restic.tusko.org"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "vps-01_restic-rest_https failed"

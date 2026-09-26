@@ -1,0 +1,48 @@
+# 32-endpoints-lab.yaml
+
+endpoints:
+  - name: vm-05_pointer_tailnet
+    group: tailnet
+    url: "http://100.116.166.73:8081"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+    alerts:
+      - type: ntfy
+        description: "pointer tailnet check failed"
+
+  - name: vm-05_pointer_https
+    group: lab
+    url: "https://pointer.tusko.org"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "pointer https check failed"
+
+  - name: vm-05_corndog_tailnet
+    group: tailnet
+    url: "http://100.116.166.73:8082"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+    alerts:
+      - type: ntfy
+        description: "corndog tailnet check failed"
+
+  - name: vm-05_corndog_https
+    group: lab
+    url: "https://corndog.tusko.org"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "corndog https check failed"

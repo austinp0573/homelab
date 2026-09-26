@@ -1,0 +1,38 @@
+# 31-endpoints-remote.yaml
+
+endpoints:
+  - name: original_tusko.org
+    group: remote
+    url: "https://tusko.org"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "original tusko.org failed"
+
+  - name: tusko_confucius_say
+    group: remote
+    url: "https://cf.tusko.org"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "tusko_confucius_say failed"
+
+  - name: google
+    group: external_service
+    url: "https://google.com"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    alerts:
+      - type: ntfy
+        description: "google failed"

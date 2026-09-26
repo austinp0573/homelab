@@ -1,0 +1,28 @@
+# 33-endpoints-critical.yaml
+
+#endpoints:
+#  - name: vm-01_vaultwarden
+#    group: critical
+#    url: "https://bleggit.tusko.org/plesko/alive"
+#    interval: 1m
+#    conditions:
+#      - "[STATUS] == 200"
+#      - "[RESPONSE_TIME] < 5000"
+#      - "[CERTIFICATE_EXPIRATION] > 168h"
+#    alerts:
+#      - type: ntfy
+#        description: "vaultwarden /alive is down, PANIC!"
+#
+#  - name: vm-01_vaultwarden_api
+#    group: critical
+#    url: "https://bleggit.tusko.org/plesko/api/alive"
+#    interval: 1m
+#    conditions:
+#      - "[STATUS] == 200"
+#      - "[RESPONSE_TIME] < 5000"
+#      - "[CERTIFICATE_EXPIRATION] > 168h"
+#    alerts:
+#      - type: ntfy
+#        description: "vaultwarden api/alive is down, PANIC!"
+
+#  - name: truenas

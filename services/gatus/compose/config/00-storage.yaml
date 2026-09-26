@@ -1,0 +1,10 @@
+# sqlite history - survives container recreate
+# 25 endpoints a 1m checks is 36000/day
+# needs testing but I can probably push max-results: up to ~3days worth
+# try with 4320, revert to 2880 -> 1440 if DOM issues arise
+# if I need more than 500 events records are needed, you have bigger problems
+storage:
+  type: sqlite
+  path: /data/gatus.db
+  maximum-number-of-results: 4320
+  maximum-number-of-events: 500

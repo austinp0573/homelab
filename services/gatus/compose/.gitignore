@@ -1,6 +1,8 @@
 .env
 *.log
 secrets/password.txt
+config/10-security.yaml
 config/20-alerting.yaml
 data/*.db
 data/*.db-*
+prod/

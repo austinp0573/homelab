@@ -1,16 +1,21 @@
 # gatus
 
-## resource estimates
+[https://github.com/TwiN/gatus](https://github.com/TwiN/gatus)
 
-Rough idle / typical / peak guesses per container. Not measured on my hosts - ballpark from docs and common reports.
-
-### gatus
+### gatus - rough estimates
 
 | | CPU | RAM | disk | network |
 |---|---|---|---|---|
 | low | <1% | ~20-40 MB | image ~25 MB + small sqlite | periodic checks only |
 | expected | 1-5% | ~50-100 MB (tens of endpoints) | sqlite grows with history retention | check probes + alert posts (ntfy) |
 | high | 0.1-0.5 core | ~150-300 MB with huge histories / many endpoints | uncapped history can bloat disk | fast intervals across many endpoints |
+
+```bash
+CONTAINER ID   NAME           CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O     PIDS
+sdklfjsdlfkj   gatus          0.05%     31.05MiB / 7.761GiB   0.39%     2.92MB / 1.39MB   0B / 2.3MB    10
+```
+
+* Basically idling
 
 deploy path on host: `/opt/gatus/`
 

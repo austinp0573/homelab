@@ -40,7 +40,7 @@ except ImportError:
     sys.exit(1)
 password = os.environ["PASS"].encode()
 # cost 10 - gatus docs warn that high cost slows every request
-hashed = bcrypt.hashpw(password, bcrypt.gensalt(rounds=10))
+hashed = bcrypt.hashpw(password, bcrypt.gensalt(rounds=12))
 # normalize to $2a$ which some verifiers expect
 if hashed.startswith(b"$2b$"):
     hashed = b"$2a$" + hashed[4:]

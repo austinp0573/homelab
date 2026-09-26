@@ -1,0 +1,14 @@
+services:
+  gatus:
+    image: ${GATUS_IMAGE}
+    container_name: ${CONTAINER_NAME}
+    restart: ${RESTART_POLICY}
+    #ports:
+    #  - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:8080"
+    network_mode: host
+    environment:
+      GATUS_CONFIG_PATH: /config
+    volumes:
+      - ./config:/config:ro
+      - ${DATA_DIR}:/data
+    # hardened gatus uses a scratch container, no healthchecks
