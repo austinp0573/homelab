@@ -17,8 +17,8 @@ body {
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  opacity: 0.85;
-  transition: opacity 2s ease;
+/*  opacity: 0.85;
+  transition: opacity 2s ease; */
 }
 
 .retro-terminal {

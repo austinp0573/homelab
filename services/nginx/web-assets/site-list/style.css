@@ -1,0 +1,180 @@
+/* Zero out default browser behaviors */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Absolute Black Background and Terminal Theme */
+body {
+    background-color: #000000;
+    color: #00ff66; /* Intense HTOP Green */
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    min-height: 100vh;
+}
+
+/* Centered container allowing scrolling if list grows */
+.viewport-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+}
+
+/* Content block constraints */
+.terminal-card {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    text-align: center;
+}
+
+/* Main Heading with Emissive Glow */
+.main-heading {
+    font-size: 3.5rem;
+    font-weight: normal;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 255, 102, 0.5), 0 0 20px rgba(0, 255, 102, 0.3);
+    line-height: 1.1;
+}
+
+/* Subtext Styling */
+.subtext {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    letter-spacing: 1px;
+    opacity: 0.85;
+    text-transform: lowercase;
+    margin-top: 8px;
+}
+
+.subtext a {
+    color: #00ff66;
+    text-decoration: underline;
+    opacity: 0.9;
+    transition: opacity 0.2s ease, text-shadow 0.2s ease;
+}
+
+.subtext a:hover {
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
+}
+
+/* Animated Blinking Underscore Cursor */
+.cursor {
+    display: inline-block;
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    from, to { color: transparent; }
+    50% { color: #00ff66; }
+}
+
+/* Endpoint Section Heading */
+.endpoint-heading {
+    font-size: 1.35rem;
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    opacity: 0.95;
+    text-transform: lowercase;
+    margin-bottom: 6px;
+    text-shadow: 0 0 8px rgba(0, 255, 102, 0.4);
+}
+
+/* Link List Structure */
+.link-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 10px;
+    text-align: left;
+}
+
+/* Terminal Interactive Link Button */
+.terminal-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid rgba(0, 255, 102, 0.25);
+    background: rgba(0, 255, 102, 0.02);
+    color: #00ff66;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.terminal-link .prompt {
+    font-weight: bold;
+    color: #00ff66;
+    opacity: 0.6;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.terminal-link .label {
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+    flex: 1;
+}
+
+.terminal-link .url {
+    font-size: 0.95rem;
+    opacity: 0.6;
+    letter-spacing: 0.5px;
+}
+
+/* Hover and Focus States */
+.terminal-link:hover,
+.terminal-link:focus-visible {
+    background: rgba(0, 255, 102, 0.12);
+    border-color: #00ff66;
+    box-shadow: 0 0 12px rgba(0, 255, 102, 0.3), inset 0 0 8px rgba(0, 255, 102, 0.1);
+    outline: none;
+    transform: translateX(4px);
+}
+
+.terminal-link:hover .prompt,
+.terminal-link:focus-visible .prompt {
+    opacity: 1;
+    transform: translateX(2px);
+    text-shadow: 0 0 8px rgba(0, 255, 102, 0.8);
+}
+
+.terminal-link:hover .url,
+.terminal-link:focus-visible .url {
+    opacity: 0.9;
+}
+
+/* Responsive Scaling Rules */
+@media (max-width: 768px) {
+    .main-heading {
+        font-size: 2.5rem;
+    }
+
+    .terminal-link {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 12px 14px;
+    }
+
+    .terminal-link .url {
+        font-size: 0.85rem;
+        padding-left: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-heading {
+        font-size: 2rem;
+    }
+
+    .subtext {
+        font-size: 0.95rem;
+    }
+}

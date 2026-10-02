@@ -1,0 +1,82 @@
+/* Zero out default browser behaviors */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Absolute Black Background and Full Viewport Lock */
+body {
+    background-color: #000000;
+    color: #00ff66; /* Intense HTOP Green */
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    overflow: hidden; /* Prevents unwanted scrollbars */
+}
+
+/* Container to center content horizontally and vertically */
+.viewport-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100vw;
+    height: 100vh;
+    padding: 20px;
+}
+
+/* Content block constraints */
+.terminal-card {
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Main Heading Styling with Emissive Glow */
+.main-heading {
+    font-size: 5.5rem;
+    font-weight: normal;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 255, 102, 0.5), 0 0 20px rgba(0, 255, 102, 0.3);
+    line-height: 1.1;
+}
+
+/* Subtext Styling */
+.subtext {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    letter-spacing: 1px;
+    opacity: 0.85;
+    text-transform: lowercase;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Animated Blinking Underscore Terminal Cursor */
+.cursor {
+    display: inline-block;
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    from, to { color: transparent }
+    50% { color: #00ff66; }
+}
+
+/* Responsive Scaling Rules for Mobile Viewports */
+@media (max-width: 768px) {
+    .main-heading {
+        font-size: 3.5rem;
+    }
+    .subtext {
+        font-size: 1rem;
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-heading {
+        font-size: 2.5rem;
+    }
+}

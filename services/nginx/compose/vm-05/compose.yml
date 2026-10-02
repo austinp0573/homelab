@@ -1,0 +1,41 @@
+services:
+  tailscale:
+    image: ${TAILSCALE_IMAGE:-tailscale/tailscale:latest}
+    container_name: ${TS_CONTAINER_NAME:-tailscale}
+    hostname: ${TS_HOSTNAME:-tailscale}
+    network_mode: host
+    env_file: .env
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_AUTH_ONCE: ${TS_AUTH_ONCE:-true}
+      TS_USERSPACE: ${TS_USERSPACE:-false}
+      TS_STATE_DIR: ${TS_STATE_DIR:-/var/lib/tailscale}
+      TS_EXTRA_ARGS: ${TS_EXTRA_ARGS:-}
+      TS_TAILSCALED_EXTRA_ARGS: ${TS_TAILSCALED_EXTRA_ARGS:-}
+      TS_ACCEPT_DNS: ${TS_ACCEPT_DNS:-}
+    volumes:
+      - ./ts-state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - net_raw
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx-ts
+    ports: 
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+      - "8083:8083"
+      - "8084:8084"
+      - "8085:8085"
+      - "8086:8086"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web-assets/:/usr/share/nginx/html/:ro
+    depends_on:
+      - tailscale
+    restart: unless-stopped

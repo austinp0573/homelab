@@ -1,0 +1,28 @@
+services:
+  web-server-01:
+    image: nginx:alpine
+    container_name: stack1-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - stack1_net
+
+  frpc:
+    image: fatedier/frpc:v0.69.1
+    container_name: stack1-frpc
+    command: ["-c", "/etc/frp/frpc.toml"]
+    restart: unless-stopped
+    volumes:
+      - ./frpc-config/frpc.yaml:/etc/frp/frpc.yaml:ro
+    networks:
+      - stack1_net
+    depends_on:
+      - web-server-01
+
+networks:
+  stack1_net:
+    driver: bridge
+    internal: false

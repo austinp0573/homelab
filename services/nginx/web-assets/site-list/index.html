@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Directory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="viewport-container">
+        <main class="terminal-card">
+            <header class="terminal-header">
+                <h1 class="main-heading">Site Directory<span class="cursor">_</span></h1>
+                <p class="subtext">running in an nginx container in vm-05 on pve-04</p>
+                <p class="subtext"><a
+                        href="https://github.com/austinp0573/homelab/blob/main/docs/hosts/pics/homelab-labeled.webp"
+                        target="_blank" rel="noopener noreferrer">The Homelab &rarr;</a></p>
+            </header>
+
+            <nav class="links-nav">
+                <h2 class="endpoint-heading">select an endpoint to connect</h2>
+                <ul class="link-list">
+                    <li class="link-item">
+                        <a href="https://patience.{$ROOT_DOMAIN}" data-sub="patience" class="terminal-link"
+                            target="_blank" rel="noopener noreferrer">
+                            <span class="prompt">&gt;</span>
+                            <span class="label">Patience</span>
+                            <span class="url">patience.{$ROOT_DOMAIN}</span>
+                        </a>
+                    </li>
+                    <li class="link-item">
+                        <a href="https://pointer.{$ROOT_DOMAIN}" data-sub="pointer" class="terminal-link"
+                            target="_blank" rel="noopener noreferrer">
+                            <span class="prompt">&gt;</span>
+                            <span class="label">Pointer</span>
+                            <span class="url">pointer.{$ROOT_DOMAIN}</span>
+                        </a>
+                    </li>
+                    <li class="link-item">
+                        <a href="https://corndog.{$ROOT_DOMAIN}" data-sub="corndog" class="terminal-link"
+                            target="_blank" rel="noopener noreferrer">
+                            <span class="prompt">&gt;</span>
+                            <span class="label">Corndog</span>
+                            <span class="url">corndog.{$ROOT_DOMAIN}</span>
+                        </a>
+                    </li>
+                    <li class="link-item">
+                        <a href="https://skeleton.{$ROOT_DOMAIN}" data-sub="skeleton" class="terminal-link"
+                            target="_blank" rel="noopener noreferrer">
+                            <span class="prompt">&gt;</span>
+                            <span class="label">Skeleton</span>
+                            <span class="url">skeleton.{$ROOT_DOMAIN}</span>
+                        </a>
+                    </li>
+                    <li class="link-item">
+                        <a href="https://corgi.{$ROOT_DOMAIN}" data-sub="corgi" class="terminal-link" target="_blank"
+                            rel="noopener noreferrer">
+                            <span class="prompt">&gt;</span>
+                            <span class="label">Corgi</span>
+                            <span class="url">corgi.{$ROOT_DOMAIN}</span>
+                        </a>
+                    </li>
+                    <li class="link-item">
+                        <a href="https://hotdogcat.{$ROOT_DOMAIN}" data-sub="hotdogcat" class="terminal-link"
+                            target="_blank" rel="noopener noreferrer">
+                            <span class="prompt">&gt;</span>
+                            <span class="label">HotdogCat</span>
+                            <span class="url">hotdogcat.{$ROOT_DOMAIN}</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </main>
+    </div>
+
+    <script>
+        // Automatically resolve {$ROOT_DOMAIN} in browser when served under Caddy
+        const host = window.location.hostname;
+        if (host && host.includes('.')) {
+            const parts = host.split('.');
+            // If accessed via sites.app.example.com, base is 'app.example.com'
+            const baseDomain = parts.slice(1).join('.');
+            document.querySelectorAll('.terminal-link[data-sub]').forEach(link => {
+                const sub = link.getAttribute('data-sub');
+                const target = `${window.location.protocol}//${sub}.${baseDomain}`;
+                link.href = target;
+                const urlSpan = link.querySelector('.url');
+                if (urlSpan) {
+                    urlSpan.textContent = `${sub}.${baseDomain}`;
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

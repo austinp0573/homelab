@@ -1,0 +1,10 @@
+services:
+  nginx:
+    image: ${NGINX_IMAGE:-nginx:alpine}
+    container_name: ${NGINX_CONTAINER_NAME:-nginx}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:80"
+    volumes:
+      # - ${NGINX_CONF:-./config/proxy/nginx.conf}:/etc/nginx/nginx.conf:ro
+      - ./html/:/usr/share/nginx/html/:ro
