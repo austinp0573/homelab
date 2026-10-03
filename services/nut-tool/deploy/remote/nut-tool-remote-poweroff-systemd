@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+# Schedule poweroff a couple of seconds in the future so the SSH forced command
+# can return status 0 before sshd itself is terminated by shutdown.
+exec /usr/bin/systemd-run \
+    --quiet \
+    --on-active=2s \
+    /usr/bin/systemctl poweroff

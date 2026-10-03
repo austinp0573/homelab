@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+# This script is installed as a forced command in authorized_keys. sshd places
+# the command requested by nut-tool in SSH_ORIGINAL_COMMAND.
+case "${SSH_ORIGINAL_COMMAND:-}" in
+    nut-tool-check)
+        exit 0
+        ;;
+    nut-tool-shutdown)
+        exec /usr/bin/sudo -n /usr/local/sbin/nut-tool-remote-poweroff
+        ;;
+    *)
+        echo "nut-tool: command denied" >&2
+        exit 126
+        ;;
+esac

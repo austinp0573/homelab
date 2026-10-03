@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+# BusyBox/OpenRC variant. Return success to SSH first, then power off shortly
+# afterward. Install sudo on the target and allow only this root-owned wrapper.
+nohup /bin/sh -c 'sleep 2; exec /sbin/poweroff' </dev/null >/dev/null 2>&1 &
+exit 0

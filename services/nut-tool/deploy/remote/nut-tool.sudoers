@@ -1,0 +1,2 @@
+# Install as /etc/sudoers.d/nut-tool and validate with visudo -cf.
+ups-shutdown ALL=(root) NOPASSWD: /usr/local/sbin/nut-tool-remote-poweroff

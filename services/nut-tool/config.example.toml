@@ -1,0 +1,108 @@
+[nut]
+# nut-tool talks directly to upsd; it does not execute /usr/bin/upsc.
+address = "127.0.0.1:3493"
+ups_name = "ups"
+connect_timeout_seconds = 3
+read_timeout_seconds = 3
+
+[policy]
+# Shutdown when either this continuous OB time OR low_battery_percent is reached.
+time_on_battery_minutes = 10
+low_battery_percent = 50.0
+
+# After a committed shutdown, require OL to remain continuously stable for this
+# long AND charge to reach this percentage before any WOL is sent.
+wake_battery_percent = 80.0
+mains_stable_seconds = 60
+poll_interval_seconds = 5
+
+# Treat NUT's own critical indicators as emergency shutdown triggers.
+honor_nut_low_battery = true
+honor_nut_fsd = true
+
+# If NUT telemetry disappears after OB was already confirmed, keep the outage
+# clock running. If the time threshold is reached while telemetry is still down,
+# commit the shutdown rather than silently resetting the timer.
+shutdown_on_nut_loss_after_confirmed_ob = true
+
+# Shutdown retries are passes: every still-pending host gets one attempt in each
+# pass. Successful hosts are never contacted again in that outage cycle.
+max_shutdown_passes = 5
+shutdown_retry_initial_seconds = 5
+shutdown_retry_max_seconds = 30
+max_concurrent_ssh = 4
+
+# true = after bounded retries, continue the outage procedure even if a dead host
+# could not be shut down. false = remain SHUTTING_DOWN and retry again later.
+continue_after_shutdown_retries_exhausted = true
+
+# WOL redundancy and optional TCP boot verification.
+wol_packets = 3
+wol_packet_interval_ms = 250
+max_wake_passes = 12
+wake_retry_seconds = 15
+wake_probe_delay_seconds = 5
+wake_connect_timeout_seconds = 3
+
+# true = continue to later wake-priority groups after bounded failures.
+# false = remain WAKING and retry the failed priority later.
+continue_after_wake_retries_exhausted = true
+
+[ssh]
+private_key = "/etc/nut-tool/id_ed25519"
+known_hosts = "/etc/nut-tool/known_hosts"
+connect_timeout_seconds = 5
+command_timeout_seconds = 15
+
+# These strings are deliberately boring. The recommended target-side
+# authorized_keys forced-command gate accepts only these two values.
+check_command = "nut-tool-check"
+shutdown_command = "nut-tool-shutdown"
+
+[state]
+path = "/var/lib/nut-tool/state.json"
+
+# Example host. Replace documentation addresses/MACs before deployment.
+[[hosts]]
+name = "pve-1"
+address = "192.0.2.10"
+ssh_port = 22
+ssh_user = "ups-shutdown"
+shutdown_enabled = true
+shutdown_priority = 10
+# Optional per-host override; otherwise [ssh].shutdown_command is used.
+# shutdown_command = "nut-tool-shutdown"
+wake_enabled = true
+wake_priority = 20
+mac = "02:00:00:00:00:10"
+wol_destination = "192.0.2.255:9"
+# If set, a host is not considered awake until this TCP port accepts a connection.
+wake_check_address = "192.0.2.10"
+wake_check_port = 22
+
+[[hosts]]
+name = "pve-2"
+address = "192.0.2.11"
+ssh_port = 22
+ssh_user = "ups-shutdown"
+shutdown_enabled = true
+shutdown_priority = 10
+wake_enabled = true
+wake_priority = 20
+mac = "02:00:00:00:00:11"
+wol_destination = "192.0.2.255:9"
+wake_check_port = 22
+
+# Example of storage shutting down after compute, but waking before compute.
+[[hosts]]
+name = "nas-1"
+address = "192.0.2.20"
+ssh_port = 22
+ssh_user = "ups-shutdown"
+shutdown_enabled = true
+shutdown_priority = 20
+wake_enabled = true
+wake_priority = 10
+mac = "02:00:00:00:00:20"
+wol_destination = "192.0.2.255:9"
+wake_check_port = 22

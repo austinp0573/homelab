@@ -1,0 +1,43 @@
+[Unit]
+Description=NUT UPS shutdown and Wake-on-LAN orchestrator
+Wants=network-online.target
+After=network-online.target
+# If this host uses Debian/Ubuntu's nut-server.service, uncomment the next line.
+# After=nut-server.service
+
+[Service]
+Type=simple
+User=nut-tool
+Group=nut-tool
+ExecStart=/usr/local/bin/nut-tool --config /etc/nut-tool/config.toml
+Restart=always
+RestartSec=3s
+TimeoutStopSec=20s
+
+StateDirectory=nut-tool
+StateDirectoryMode=0750
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

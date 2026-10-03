@@ -1,0 +1,14 @@
+/target/
+/.cargo/
+
+# Never commit controller private keys or live environment state.
+id_ed25519
+id_ed25519.pub
+state.json
+
+# Runtime copies used next to the container compose file.
+/deploy/container/config.toml
+/deploy/container/id_ed25519
+/deploy/container/known_hosts
+/deploy/container/state/
+/deploy/container/nut-tool

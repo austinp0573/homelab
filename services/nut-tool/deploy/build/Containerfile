@@ -1,0 +1,27 @@
+# Native-architecture static build. Build this on amd64 for amd64, or arm64 for arm64.
+# The official Rust Alpine image uses a musl Rust toolchain.
+FROM rust:alpine AS build
+
+RUN apk add --no-cache \
+    build-base \
+    cmake \
+    perl \
+    binutils \
+    file
+
+WORKDIR /src
+COPY Cargo.toml ./
+COPY src ./src
+
+RUN cargo build --release
+
+# Fail the image build if the ELF asks for a dynamic loader or has DT_NEEDED
+# shared-library entries. These checks are more useful than assuming "musl" means
+# the final dependency graph remained static.
+RUN ! readelf -l /src/target/release/nut-tool | grep -q 'Requesting program interpreter' \
+ && ! readelf -d /src/target/release/nut-tool 2>/dev/null | grep -q '(NEEDED)' \
+ && file /src/target/release/nut-tool
+
+FROM scratch
+COPY --from=build /src/target/release/nut-tool /nut-tool
+ENTRYPOINT ["/nut-tool"]
