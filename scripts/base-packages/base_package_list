@@ -1,0 +1,7 @@
+bat # enhanced cli cat tool
+eza # modern ls
+ripgrep # modern grep
+nerdctl # cli for containerd
+nerdctl-full # cli for containerd with all dependencies
+fastfetch # prints system information to the console
+yamlfmt # statically compiled go binary for working with yaml
