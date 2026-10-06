@@ -1,0 +1,286 @@
+#cloud-config
+
+# ==============================================================================
+# SYSTEM IDENTITY & LOCALIZATION
+# ==============================================================================
+hostname: server-01
+fqdn: server-01.internal.example.com
+prefer_fqdn_over_hostname: true
+preserve_hostname: false
+create_hostname_file: true
+manage_etc_hosts: true
+
+timezone: America/Chicago
+locale: en_US.UTF-8
+
+keyboard:
+  layout: us
+  variant: ""
+  model: pc105
+  options: "ctrl:nocaps"
+
+# ==============================================================================
+# USER MANAGEMENT & AUTHENTICATION
+# ==============================================================================
+users:
+  - default
+  - name: sysadmin
+    gecos: System Administrator
+    primary_group: sysadmin
+    groups: [adm, audio, cdrom, dialout, dip, floppy, lxd, netdev, plugdev, sudo, video]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    passwd: "$6$rounds=4096$saltsalt$hashedpasswordplaceholdergoeshereXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    no_user_group: false
+    system: false
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXAMPLEKEYREPLACEWITHYOURPUBLICKEY0000000000 admin@workstation
+    ssh_import_id:
+      - gh:githubusername
+
+groups:
+  - sysadmin
+  - docker
+  - monitoring: [sysadmin]
+
+chpasswd:
+  list: |
+    root:DISABLED
+  expire: false
+
+# ==============================================================================
+# SSH DAEMON CONFIGURATION & HOST KEYS
+# ==============================================================================
+ssh_pwauth: false
+disable_root: true
+ssh_deletekeys: false
+ssh_genkeytypes: [ed25519, rsa]
+
+ssh_keys:
+  rsa_private: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtcn
+    NhAAAAAwEAAQAAAYEA0placeholderprivatekeydatacannotberealhere000000000000
+    -----END OPENSSH PRIVATE KEY-----
+  rsa_public: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD0placeholderpublickeydata root@server-01
+  ed25519_private: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAowAAAAtzc2gtZW
+    QyNTUxOQAAACDplaceholderprivatekeydataed2551900000000000000000000000000
+    -----END OPENSSH PRIVATE KEY-----
+  ed25519_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDplaceholderpublickeydataed25519000 root@server-01
+
+# ==============================================================================
+# DNS & RESOLUTION
+# ==============================================================================
+manage_resolv_conf: false
+resolv_conf:
+  nameservers:
+    - 1.1.1.1
+    - 8.8.8.8
+  searchdomains:
+    - internal.example.com
+  domain: internal.example.com
+  options:
+    rotate: true
+    timeout: 1
+    attempts: 3
+
+# ==============================================================================
+# TIME SYNCHRONIZATION (NTP)
+# ==============================================================================
+ntp:
+  enabled: true
+  ntp_client: systemd-timesyncd
+  servers:
+    - time.cloudflare.com
+    - time.google.com
+  pools:
+    - 0.pool.ntp.org
+    - 1.pool.ntp.org
+
+# ==============================================================================
+# PACKAGE MANAGEMENT & REPOSITORIES (APT)
+# ==============================================================================
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - git
+  - gnupg
+  - htop
+  - iotop
+  - jq
+  - lsof
+  - net-tools
+  - qemu-guest-agent
+  - rsync
+  - screen
+  - software-properties-common
+  - sysstat
+  - tcpdump
+  - tmux
+  - tree
+  - ufw
+  - unzip
+  - vim
+  - wget
+
+apt:
+  preserve_sources_list: false
+  primary:
+    - arches: [default]
+      uri: http://archive.ubuntu.com/ubuntu/
+  security:
+    - arches: [default]
+      uri: http://security.ubuntu.com/ubuntu/
+  conf: |
+    APT::Periodic::Update-Package-Lists "1";
+    APT::Periodic::Unattended-Upgrade "1";
+  sources:
+    docker.list:
+      source: "deb [arch=amd64 signed-by=$KEY_FILE] https://download.docker.com/linux/ubuntu $RELEASE stable"
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+      keyserver: keyserver.ubuntu.com
+    hashicorp.list:
+      source: "deb [arch=amd64 signed-by=$KEY_FILE] https://apt.releases.hashicorp.com $RELEASE main"
+      keyid: 798AEC654E5C15428C8E42EEAA16FCBCA621E7F1
+
+debconf_selections:
+  set1: |
+    iptables-persistent iptables-persistent/autosave_v4 boolean true
+    iptables-persistent iptables-persistent/autosave_v6 boolean true
+
+snap:
+  commands:
+    - [install, canonical-livepatch]
+
+# ==============================================================================
+# DISK PARTITIONING, FILESYSTEMS & MOUNTS
+# ==============================================================================
+growpart:
+  mode: auto
+  devices: [/]
+  ignore_growroot_disabled: false
+
+disk_setup:
+  /dev/sdb:
+    table_type: gpt
+    layout: [100]
+    overwrite: false
+
+fs_setup:
+  - label: DATA_VOL
+    filesystem: ext4
+    device: /dev/sdb1
+    partition: auto
+    overwrite: false
+
+mounts:
+  - [/dev/sdb1, /mnt/data, ext4, "defaults,noatime", "0", "2"]
+  - [none, /tmp, tmpfs, "defaults,noatime,mode=1777", "0", "0"]
+
+swap:
+  filename: /swapfile
+  size: 2147483648
+  maxsize: 4294967296
+
+# ==============================================================================
+# CA CERTIFICATES
+# ==============================================================================
+ca_certs:
+  remove_defaults: false
+  trusted:
+    - |
+      -----BEGIN CERTIFICATE-----
+      MIIB/zCCAaSgAwIBAgIUPLACEHOLDERINTERNALROOTCA0000000000000000000wDQYJ
+      KoZIhvcNAQELBQAwFDESMBAGA1UEAwwJRXhhbXBsZUNBMB4XDTI2MDEwMTAwMDAwMFoX
+      DTM2MDEwMTAwMDAwMFowFDESMBAGA1UEAwwJRXhhbXBsZUNBMIGfMA0GCSqGSIb3DQEB
+      -----END CERTIFICATE-----
+
+# ==============================================================================
+# ARBITRARY FILE CREATION
+# ==============================================================================
+write_files:
+  - path: /etc/sysctl.d/99-custom-tuning.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      net.ipv4.ip_forward = 1
+      net.core.somaxconn = 1024
+      vm.swappiness = 10
+      vm.overcommit_memory = 1
+
+  - path: /etc/security/limits.d/99-nofile.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      * soft nofile 65535
+      * hard nofile 65535
+
+  - path: /etc/motd
+    permissions: "0644"
+    owner: root:root
+    content: |
+      ====================================================================
+      AUTHORIZED ACCESS ONLY. ALL SESSIONS LOGGED AND MONITORED.
+      Provisioned via Cloud-Init on Canonical/Ubuntu Infrastructure.
+      ====================================================================
+
+  - path: /usr/local/bin/deploy-payload.sh
+    permissions: "0750"
+    owner: root:root
+    encoding: b64
+    content: IyEvYmluL2Jhc2gKZWNobyAiUGF5bG9hZCBleGVjdXRpb24gc3RhcnRlZCIgPj4gL3Zhci9sb2cvZGVwbG95LmxvZwo=
+
+  - path: /var/log/provision-audit.log
+    permissions: "0600"
+    owner: root:root
+    append: true
+    content: |
+      [BOOTSTRAP] Initialized system provisioning layer.
+
+# ==============================================================================
+# EXECUTION HOOKS: BOOTCMD & RUNCMD
+# ==============================================================================
+bootcmd:
+  - [systemctl, mask, systemd-networkd-wait-online.service]
+  - echo "early bootcmd execution: $(date -Ins)" >> /var/log/cloud-init-stages.log
+
+runcmd:
+  - [systemctl, daemon-reload]
+  - [systemctl, enable, --now, qemu-guest-agent]
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp comment 'SSH incoming access'
+  - ufw --force enable
+  - sysctl --system
+  - /usr/local/bin/deploy-payload.sh
+
+# ==============================================================================
+# TELEMETRY & COMPLETION NOTIFICATION
+# ==============================================================================
+phone_home:
+  url: https://webhook.internal.example.com/api/v1/provisioning
+  post:
+    - instance_id
+    - hostname
+    - fqdn
+    - pub_key_ed25519
+  tries: 5
+
+final_message: "System bootstrap complete after $UPTIME seconds on $TIMESTAMP."
+
+# ==============================================================================
+# POWER CONTROL AFTER PROVISIONING
+# ==============================================================================
+power_state:
+  mode: reboot
+  message: Rebooting system to apply kernel configurations and updates
+  timeout: 10
+  condition: test -f /var/run/reboot-required

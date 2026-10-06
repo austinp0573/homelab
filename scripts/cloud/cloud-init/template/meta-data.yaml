@@ -1,0 +1,37 @@
+# ==============================================================================
+# CLOUD-INIT INSTANCE METADATA (NoCloud / ConfigDrive / OpenStack)
+# ==============================================================================
+instance-id: i-0123456789abcdef0
+local-hostname: server-01
+hostname: server-01.internal.example.com
+
+# Datasource processing mode:
+# - local: Run network modules during local phase before networking is up
+# - net: Wait for network initialization before processing
+dsmode: local
+
+# Cloud and hypervisor platform identifiers
+cloud-name: homelab-kvm
+platform: nocloud
+subplatform: configdrive
+launch-index: 0
+
+# Placement and topological metadata
+availability-zone: rack-01
+region: dc-central-01
+cluster: cygnus-compute
+
+# Public SSH keys available to instance provisioning
+public-keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXAMPLEKEYREPLACEWITHYOURPUBLICKEY0000000000 admin@workstation
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD0placeholderpublickeydata admin@backup
+
+# Arbitrary key-value instance metadata (accessible via cloud-init query or IMDS)
+meta:
+  environment: production
+  role: hypervisor-node
+  owner: austin
+  tenant: engineering
+  billing-id: internal-0042
+  ephemeral: false
+  provisioner: ansible

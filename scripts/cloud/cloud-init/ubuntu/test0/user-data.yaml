@@ -1,0 +1,42 @@
+#cloud-config
+
+# User Configuration
+users:
+  - name: austin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    shell: /bin/bash
+    passwd: password
+    lock_passwd: false
+    ssh_authorized_keys:
+      - sshkey
+
+# DNS Configuration
+manage_resolv_conf: true
+resolv_conf:
+  nameservers:
+    - 1.1.1.1
+    - 9.9.9.9
+    - 1.0.0.1
+
+# Network Configuration
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: false
+      addresses:
+        - 10.0.0.0/24
+      routes:
+        - to: default
+          via: 10.0.0.1
+      dhcp6: false
+      accept-ra: true
+
+# Package Configuration
+package_update: true
+package_upgrade: true
+
+# Advanced Configuration
+hostname: local-vm-01
+timezone: America/Chicago

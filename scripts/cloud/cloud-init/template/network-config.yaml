@@ -1,0 +1,110 @@
+# ==============================================================================
+# NETPLAN VERSION 2 NETWORK SPECIFICATION
+# ==============================================================================
+version: 2
+renderer: networkd
+
+ethernets:
+  # Static Primary Interface (Layer 3)
+  eth0:
+    match:
+      macaddress: "52:54:00:12:34:56"
+    set-name: eth0
+    dhcp4: false
+    dhcp6: false
+    addresses:
+      - 10.10.10.50/24
+      - "2001:db8:100::50/64"
+    routes:
+      - to: default
+        via: 10.10.10.1
+        metric: 100
+        on-link: true
+      - to: 192.168.0.0/16
+        via: 10.10.10.254
+        metric: 200
+    routing-policy:
+      - from: 10.10.10.50
+        table: 101
+        priority: 100
+    nameservers:
+      search:
+        - internal.example.com
+        - homelab.lan
+      addresses:
+        - 1.1.1.1
+        - 8.8.8.8
+        - "2606:4700:4700::1111"
+    mtu: 1500
+    wakeonlan: true
+    optional: false
+
+  # Secondary DHCP Interface
+  eth1:
+    match:
+      driver: virtio_net
+    dhcp4: true
+    dhcp6: true
+    dhcp4-overrides:
+      use-dns: false
+      use-routes: true
+      route-metric: 300
+    optional: true
+
+  # Bond Member Physical Ports
+  eth2:
+    match:
+      macaddress: "52:54:00:ab:cd:01"
+    set-name: eth2
+    optional: true
+
+  eth3:
+    match:
+      macaddress: "52:54:00:ab:cd:02"
+    set-name: eth3
+    optional: true
+
+  # Bridge Member Physical Port
+  eth4:
+    match:
+      macaddress: "52:54:00:ef:01:02"
+    set-name: eth4
+    optional: true
+
+bonds:
+  # LACP Link Aggregation Group
+  bond0:
+    interfaces:
+      - eth2
+      - eth3
+    addresses:
+      - 10.10.20.50/24
+    parameters:
+      mode: 802.3ad
+      lacp-rate: fast
+      mii-monitor-interval: 100
+      min-links: 1
+      transmit-hash-policy: layer2+3
+
+vlans:
+  # 802.1Q Tagged VLAN on Bond
+  vlan.100:
+    id: 100
+    link: bond0
+    addresses:
+      - 10.100.0.50/24
+    routes:
+      - to: 10.100.0.0/16
+        via: 10.100.0.1
+        metric: 150
+
+bridges:
+  # Virtual Switch / Bridge Interface
+  br0:
+    interfaces:
+      - eth4
+    addresses:
+      - 10.10.30.50/24
+    parameters:
+      stp: true
+      forward-delay: 15

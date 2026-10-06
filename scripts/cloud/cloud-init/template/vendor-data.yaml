@@ -1,0 +1,110 @@
+#cloud-config
+
+# ==============================================================================
+# VENDOR / PLATFORM GOVERNANCE & MANDATORY BASELINE
+# Executes prior to user-data to enforce corporate/platform baselines
+# ==============================================================================
+vendor_data:
+  enabled: true
+
+# ==============================================================================
+# CANONICAL UBUNTU PRO / ESM & LANDSCAPE MANAGEMENT
+# ==============================================================================
+ubuntu_pro:
+  token: "C10EXAMPLETOKENFORCANONICALUBUNTUPRO00000000"
+  enable:
+    - esm-infra
+    - esm-apps
+    - livepatch
+
+landscape:
+  client:
+    url: "https://landscape.internal.example.com/message-system"
+    ping_url: "http://landscape.internal.example.com/ping"
+    account_name: "standalone"
+    registration_key: "EXAMPLE_LANDSCAPE_REGISTER_KEY_00000000"
+
+# ==============================================================================
+# ENTERPRISE REPOSITORY MIRRORS
+# ==============================================================================
+apt:
+  preserve_sources_list: false
+  primary:
+    - arches: [default]
+      uri: http://archive.ubuntu.com/ubuntu/
+  security:
+    - arches: [default]
+      uri: http://security.ubuntu.com/ubuntu/
+  sources:
+    internal-infra.list:
+      source: "deb [arch=amd64 signed-by=$KEY_FILE] http://apt.internal.example.com/ubuntu $RELEASE main restricted"
+      keyid: 4B6349A705799CFDECB43E44B7E00455B229D4DD
+      keyserver: keyserver.ubuntu.com
+
+# ==============================================================================
+# MANDATORY OPERATIONAL & SECURITY PACKAGES
+# ==============================================================================
+packages:
+  - auditd
+  - canonical-livepatch
+  - fail2ban
+  - needrestart
+  - qemu-guest-agent
+  - rsyslog
+  - sosreport
+  - systemd-journal-remote
+
+# ==============================================================================
+# PLATFORM OPERATOR BASELINE ACCESS
+# ==============================================================================
+users:
+  - name: platform-ops
+    gecos: Platform Engineering Operations
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    shell: /bin/bash
+    groups: [adm, sudo]
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXAMPLEPLATFORMOPSKEY000000000000 ops@infra-telemetry
+
+# ==============================================================================
+# BASELINE AUDIT RULES & JOURNAL FORWARDING
+# ==============================================================================
+write_files:
+  - path: /etc/audit/rules.d/10-platform-baseline.rules
+    permissions: "0600"
+    owner: root:root
+    content: |
+      -w /etc/sudoers -p wa -k identity
+      -w /etc/sudoers.d/ -p wa -k identity
+      -w /var/log/auth.log -p wa -k logins
+
+  - path: /etc/systemd/journald.conf.d/10-remote.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Journal]
+      ForwardToSyslog=yes
+      Storage=persistent
+      Compress=yes
+
+# ==============================================================================
+# PLATFORM BOOTSTRAP HOOKS
+# ==============================================================================
+bootcmd:
+  - [systemctl, mask, apport.service]
+
+runcmd:
+  - auctl load /etc/audit/rules.d/10-platform-baseline.rules || service auditd restart
+  - systemctl restart systemd-journald
+  - [systemctl, enable, --now, qemu-guest-agent]
+
+# ==============================================================================
+# PLATFORM TELEMETRY NOTIFICATION
+# ==============================================================================
+phone_home:
+  url: https://telemetry.internal.example.com/api/v1/node-provisioned
+  post:
+    - instance_id
+    - hostname
+  tries: 3
