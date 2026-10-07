@@ -8,7 +8,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 echo "ensure packages"
 
 # always keep these (lean images often miss them; autoremove must not strand us)
-apt_install iproute2 procps iputils-ping
+apt_install iproute2 procps iputils-ping iptables
 
 ENSURE_PACKAGES="${ENSURE_PACKAGES:-curl git fastfetch}"
 

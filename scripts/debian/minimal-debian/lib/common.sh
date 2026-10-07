@@ -43,6 +43,9 @@ load_env() {
     # shellcheck disable=SC1090
     . "$ENV_FILE"
     set +a
+
+    export LANG="${LOCALE:-en_US.UTF-8}"
+    export LC_ALL="${LOCALE:-en_US.UTF-8}"
 }
 
 is_yes() {
