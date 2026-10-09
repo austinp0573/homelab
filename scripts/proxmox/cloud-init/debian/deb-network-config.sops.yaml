@@ -1,0 +1,14 @@
+version: 1
+
+config:
+  - type: physical
+    name: ens18
+    subnets:
+      - type: static
+        control: auto
+        address: 10.0.90.17/24
+        gateway: 10.0.90.1
+        dns_nameservers:
+          - 10.0.90.1
+          - 1.1.1.1
+          - 1.0.0.1

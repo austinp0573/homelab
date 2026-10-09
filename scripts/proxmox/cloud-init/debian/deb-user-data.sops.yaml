@@ -1,0 +1,111 @@
+#cloud-config
+hostname: vm-08
+preserve_hostname: false
+timezone: America/Chicago
+
+# ssh configuration
+ssh_pwauth: false
+disable_root: true
+
+users:
+  - name: austin
+    groups: [sudo]
+    shell: /bin/bash
+    lock_passwd: false
+    sudo:
+      - 'ALL=(ALL:ALL) ALL'
+    ssh_authorized_keys:
+      - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPrvcJibgihLVGbQj09o6TEOD84hxTRgfzlFLoUO+JEZ dmz-01'
+    ssh_import_id:
+      - gh:austinp0573
+
+
+chpasswd:
+  expire: true
+  users:
+  - {name: austin, password: password, type: text}
+
+# package management
+package_update: true
+package_upgrade: true
+
+packages:
+  - qemu-guest-agent
+  - openssh-server
+  - sudo
+  - vim-nox
+  - curl
+  - ca-certificates
+  - jq
+
+# configuration files and optimization script
+write_files:
+#  # limit journal disk and runtime storage
+#  - path: /etc/systemd/journald.conf.d/10-vm-limits.conf
+#    owner: root:root
+#    permissions: '0644'
+#    content: |
+#      [Journal]
+#      SystemMaxUse=64M
+#      RuntimeMaxUse=16M
+
+  # blacklist unnecessary hardware drivers
+  - path: /etc/modprobe.d/90-proxmox-vm.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      blacklist floppy
+      blacklist pcspkr
+      blacklist parport
+      blacklist parport_pc
+      blacklist ppdev
+      blacklist lp
+      blacklist joydev
+      blacklist bluetooth
+      blacklist btusb
+
+  # first-boot resource optimization
+  - path: /usr/local/sbin/trim-vm.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      # disable desktop/peripheral services when present
+      for unit in \
+          avahi-daemon.service \
+          avahi-daemon.socket \
+          bluetooth.service \
+          cups.service \
+          cups.socket \
+          cups.path \
+          ModemManager.service \
+          packagekit.service; do
+          if systemctl cat "$unit" >/dev/null 2>&1; then
+              systemctl disable --now "$unit" || \
+                  printf 'warning: unable to disable %s\n' "$unit" >&2
+          fi
+      done
+
+      # unload unused hardware drivers only if they are removable
+      for module in \
+          floppy pcspkr parport_pc ppdev lp joydev btusb bluetooth parport; do
+          if grep -q "^${module} " /proc/modules; then
+              modprobe -r "$module" || \
+                  printf 'warning: unable to unload %s\n' "$module" >&2
+          fi
+      done
+
+      # qemu guest agent has a udev-activated service on Debian
+      if [[ -e /dev/virtio-ports/org.qemu.guest_agent.0 ]]; then
+          systemctl start qemu-guest-agent.service || \
+              printf 'warning: unable to start qemu-guest-agent\n' >&2
+      fi
+
+      # discard downloaded apt package archives
+      apt-get clean
+
+# execute after package installation
+runcmd:
+  - [/usr/local/sbin/trim-vm.sh]
