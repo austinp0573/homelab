@@ -1,0 +1,361 @@
+{
+	order crowdsec first
+	order authenticate before respond
+	order authorize before basicauth
+
+	crowdsec {
+		api_url "{$CROWDSEC_API_URL}"
+		api_key "{$CROWDSEC_API_KEY}"
+		ticker_interval 15s
+	}
+
+	security {
+		local identity store localdb {
+			realm local
+			path /etc/caddy/users.json
+			user {$CADDY_SECURITY_USERNAME} {
+				name {$CADDY_SECURITY_ADMIN_NAME}
+				email {$CADDY_SECURITY_ADMIN_EMAIL}
+				password "{$CADDY_SECURITY_PASSWORD}" overwrite # remove overwrite if you change the passwd in the UI, or Caddyfile reload will revert it
+				roles authp/admin authp/user
+			}
+			user {$CADDY_AUTHDB_USERNAME} {
+				name "AuthDB Service Account"
+				email "authdbctl@{$ROOT_DOMAIN}"
+				password "{$CADDY_AUTHDB_PASSWORD}" overwrite
+				roles authp/admin
+			}
+		}
+
+		authentication portal myportal {
+			crypto default token lifetime 16416000
+			crypto key sign-verify {$JWT_SECRET}
+			enable identity store localdb
+			enable admin api
+			cookie domain {$ROOT_DOMAIN}
+			cookie path /
+			#cookie lifetime 16416000 # default is 24h
+			#cookie insecure on
+
+			ui {
+				links {
+					# https://icons8.com/line-awesome
+					"gatus" https://gatus.{$ROOT_DOMAIN} icon "las la-eye"
+					"ntfy" https://ntfy.{$ROOT_DOMAIN} icon "las la-paper-plane"
+					"tailscale health" https://ts-health.{$ROOT_DOMAIN}/healthz icon "las la-server"
+					"pointer" https://pointer.{$ROOT_DOMAIN} icon "las la-mouse-pointer"
+					"stats" https://stats.{$ROOT_DOMAIN} icon "las la-signal"
+					"identity" "/auth/whoami" icon "las la-ghost" # must have no "/"
+					"profile" "/auth/profile/" icon "las la-key" # must have /
+				}
+			}
+			transform user {
+				match origin local
+				action add role authp/admin authp/user
+			}
+		}
+
+		authorization policy mypolicy {
+			set auth url https://auth.{$ROOT_DOMAIN}/
+			crypto key verify from env JWT_SECRET
+			set token sources cookie header
+			allow roles authp/admin authp/user
+		}
+	}
+}
+
+# SNIPPETS
+
+(common_headers) {
+	encode zstd br gzip
+	header {
+		?Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		?X-Content-Type-Options "nosniff"
+		?X-Frame-Options "SAMEORIGIN"
+		?Referrer-Policy "strict-origin-when-cross-origin"
+		?Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Content-Security-Policy "default-src 'self'; ..."  # customize per app
+	}
+}
+
+(tls_cloudflare) {
+	tls {
+		dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	}
+}
+
+*.{$ROOT_DOMAIN} {
+	import tls_cloudflare
+}
+
+# *.dmz.{$ROOT_DOMAIN} {
+# 	import tls_cloudflare
+# }
+
+# *.internal.{$ROOT_DOMAIN} {
+# 	import tls_cloudflare
+# }
+
+# (tls_custom) {
+#	tls {$CERT_PATH} {$KEY_PATH} # 1. Server + Intermediate CA 2. Unencrypted PrivKey
+# }
+
+(logging) {
+	log {
+		output file /data/access.log {
+			roll_size 100mb
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format json
+	}
+}
+
+(rate_limit_auth) {
+	@auth_post {
+		method POST
+	}
+	rate_limit @auth_post {
+		zone auth_zone {
+			key {remote_host}
+			events 50
+			window 1m
+		}
+	}
+}
+
+(rate_limit_general) {
+	rate_limit {
+		zone general_zone {
+			key {remote_host}
+			events 300
+			window 1m
+		}
+	}
+}
+
+(crowdsec_bouncer) {
+	crowdsec
+}
+
+# caddy security auth
+
+https://auth.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import rate_limit_auth
+	import crowdsec_bouncer
+	route {
+		authenticate with myportal
+	}
+}
+
+# gatus uptime monitoring
+
+https://gatus.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		authorize with mypolicy
+		reverse_proxy 127.0.0.1:8080 {
+			health_uri /health
+			health_status 200
+			health_interval 30s
+			health_timeout 3s
+		}
+	}
+}
+
+# ntfy notifications
+
+https://ntfy.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy 127.0.0.1:2586 {
+			health_uri /v1/health
+			health_status 200
+			health_body healthy
+			health_interval 30s
+			health_timeout 3s
+		}
+	}
+}
+
+# jotty notes vm-05 - pve-04
+
+https://jotty.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$JOTTY_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+# https://restic.{$ROOT_DOMAIN} {
+# 	import logging
+# 	import common_headers
+# 	import tls_cloudflare
+# 	import crowdsec_bouncer
+# 
+# 	route {
+# 		reverse_proxy 127.0.0.1:8000 {
+# 			health_uri /
+# 			health_status 401
+# 			health_interval 30s
+# 			health_timeout 10s
+# 		}
+# 	}
+# }
+
+# localhost ts-healthz endpoint
+
+https://ts-health.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy 127.0.0.1:9028 {
+			health_uri /healthz
+			health_status 200
+			health_interval 30s
+			health_timeout 3s
+		}
+	}
+}
+
+# static page block
+# served through vm-05 - pve-04
+
+https://patience.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$PATIENCE_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+https://pointer.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$POINTER_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+https://corndog.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$CORNDOG_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+https://skeleton.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$TERM-SKULL_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+https://corgi.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$CORGI_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+https://hotdogcat.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$HOTDOGCAT_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+https://sites.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+
+	route {
+		reverse_proxy {$SITE-LIST_APP_PROXY_ENDPOINT_ADDR}
+	}
+}
+
+# https://app.{$ROOT_DOMAIN} {
+# 	import logging
+# 	import common_headers
+# 	import tls_cloudflare
+# 	import crowdsec_bouncer
+
+# 	route {
+# 		authorize with mypolicy
+# 		reverse_proxy 127.0.0.1:8091 {
+# 			health_uri /
+# 			health_status 200
+# 			health_interval 30s
+# 			health_timeout 3s
+# 		}
+# 	}
+# }
+
+# localhost goaccess for caddy stats UI
+
+https://stats.{$ROOT_DOMAIN} {
+	import logging
+	import common_headers
+	import tls_cloudflare
+	import crowdsec_bouncer
+	route {
+		authorize with mypolicy
+
+		handle /ws {
+			reverse_proxy 127.0.0.1:7890 {
+				health_uri /
+				health_status 400
+				health_interval 30s
+				health_timeout 10s
+			}
+		}
+
+		handle {
+			root * /data
+			try_files {path} /stats.html
+			file_server
+		}
+	}
+}

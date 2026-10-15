@@ -1,0 +1,22 @@
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caddy-proxy:local
+    container_name: caddy
+    working_dir: /etc/caddy
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    volumes:
+      - ./config-caddy:/etc/caddy
+      - ./state:/config # IMPORTANT: mkdir -p state data
+      - ./data:/data # sudo chown -R 82:82 state data
+      - ./authdb/authdbctl:/root/.config/authdbctl
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
