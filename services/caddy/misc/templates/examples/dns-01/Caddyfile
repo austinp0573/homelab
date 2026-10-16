@@ -1,0 +1,20 @@
+{
+	email you@example.com
+	admin off
+}
+
+# requires a caddy binary built with github.com/caddy-dns/cloudflare (or similar)
+*.example.com {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	}
+
+	@app host app.example.com
+	handle @app {
+		reverse_proxy host.docker.internal:8080
+	}
+
+	handle {
+		abort
+	}
+}

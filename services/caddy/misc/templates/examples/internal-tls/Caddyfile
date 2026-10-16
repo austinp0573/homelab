@@ -1,0 +1,9 @@
+{
+	admin off
+	local_certs
+}
+
+app.lab {
+	tls internal
+	reverse_proxy host.docker.internal:8080
+}

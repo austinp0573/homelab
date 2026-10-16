@@ -1,0 +1,20 @@
+{
+	email you@example.com
+	admin off
+}
+
+*.example.com {
+	@app host app.example.com
+	handle @app {
+		reverse_proxy host.docker.internal:8080
+	}
+
+	@status host status.example.com
+	handle @status {
+		reverse_proxy host.docker.internal:8081
+	}
+
+	handle {
+		abort
+	}
+}

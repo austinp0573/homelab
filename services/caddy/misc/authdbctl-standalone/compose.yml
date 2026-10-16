@@ -1,0 +1,11 @@
+services:
+  authdbctl:
+    build: .
+    container_name: authdbctl
+    working_dir: /work
+    extra_hosts:
+      - "auth.lock.tusko.org:host-gateway"
+    volumes:
+      - ./work:/work
+      - ../proxy/users.json:/etc/caddy/users.json
+    entrypoint: ["sleep", "infinity"]

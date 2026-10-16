@@ -1,0 +1,11 @@
+{
+	email you@example.com
+	admin off
+}
+
+app.example.com {
+	basic_auth {
+		admin $2a$14$REPLACE_WITH_OUTPUT_OF_HASH_PASSWORD
+	}
+	reverse_proxy host.docker.internal:8080
+}

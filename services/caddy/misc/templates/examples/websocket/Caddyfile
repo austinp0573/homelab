@@ -1,0 +1,12 @@
+{
+	email you@example.com
+	admin off
+}
+
+draw.example.com {
+	reverse_proxy host.docker.internal:5000
+}
+
+collab.example.com {
+	reverse_proxy host.docker.internal:5001
+}

@@ -1,0 +1,9 @@
+{
+	email you@example.com
+	admin off
+}
+
+static.example.com {
+	root * /srv
+	file_server
+}

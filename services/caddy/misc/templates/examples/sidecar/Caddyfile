@@ -1,0 +1,9 @@
+{
+	email you@example.com
+	admin off
+}
+
+app.example.com {
+	# service name:port on the compose network
+	reverse_proxy app:8080
+}

@@ -1,0 +1,9 @@
+{
+	email you@example.com
+	admin off
+}
+
+# replace example.com and the backend. HTTP-01 needs this host pointing at the box.
+example.com {
+	reverse_proxy host.docker.internal:8080
+}

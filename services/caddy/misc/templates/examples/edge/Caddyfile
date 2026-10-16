@@ -1,0 +1,18 @@
+{
+	email you@example.com
+	admin off
+}
+
+# one site block per public hostname, or use a wildcard like examples/multi-host
+app.example.com {
+	reverse_proxy host.docker.internal:8080
+}
+
+status.example.com {
+	reverse_proxy host.docker.internal:8081
+}
+
+# drop anything else that hits this listener by name
+:443 {
+	abort
+}

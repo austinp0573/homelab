@@ -1,0 +1,11 @@
+{
+	email you@example.com
+	admin off
+}
+
+app.example.com {
+	root * /srv
+	encode gzip
+	try_files {path} /index.html
+	file_server
+}

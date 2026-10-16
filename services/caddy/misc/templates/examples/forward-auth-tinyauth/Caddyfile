@@ -1,0 +1,20 @@
+{
+	email you@example.com
+	admin off
+}
+
+(tinyauth) {
+	forward_auth tinyauth:3000 {
+		uri /api/auth/caddy
+		copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+	}
+}
+
+auth.example.com {
+	reverse_proxy tinyauth:3000
+}
+
+app.example.com {
+	import tinyauth
+	reverse_proxy host.docker.internal:8080
+}

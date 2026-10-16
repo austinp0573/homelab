@@ -1,0 +1,8 @@
+{
+	email you@example.com
+	admin off
+}
+
+app.example.com {
+	reverse_proxy host.docker.internal:8080
+}

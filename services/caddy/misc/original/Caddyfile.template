@@ -1,0 +1,42 @@
+{
+    # Global options
+    email ${CADDY_GLOBAL_EMAIL}
+
+    # Restrict administrative API
+    admin ${CADDY_GLOBAL_ADMIN_ENDPOINT}
+    
+    # Global acme_dns applies to all blocks below
+    acme_dns cloudflare ${CLOUDFLARE_API_TOKEN}
+}
+
+# Global Definition Block
+# Use to capture all desired subdomains with *.example.com
+${CADDY_WILDCARD_DOMAIN_0} {
+
+    tls {
+        protocols tls1.3
+    }
+
+    # security hardening headers
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    
+    # below in the app documentation ?
+    # encode gzip zstd
+
+    # named service 0
+    ${CADDY_NAMED_REQUEST_MATCHER_0} host ${CADDY_HOSTNAME_PARAMETER_0}
+    handle ${CADDY_NAMED_REQUEST_MATCHER_0} {
+        reverse_proxy ${CADDY_BACKEND_TARGET_0}
+    }
+
+    # Catch-all handler to drop unmapped subdomain queries gracefully
+    handle {
+        abort
+    } 
+    
+}
