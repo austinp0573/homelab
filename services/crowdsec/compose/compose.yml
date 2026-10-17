@@ -1,0 +1,29 @@
+# run: nerdctl exec crowdsec cscli bouncers add caddy-bouncer
+# nerdctl exec -it crowdsec cscli console enroll <YOUR_ENROLLMENT_KEY>
+services:
+  crowdsec:
+    image: crowdsecurity/crowdsec:slim
+    container_name: crowdsec
+    restart: unless-stopped
+    ports:
+      - "${HOST_BIND}:${HOST_PORT}:8080"
+    environment:
+      - COLLECTIONS=crowdsecurity/caddy crowdsecurity/http-cve crowdsecurity/whitelist-good-actors
+      - TZ
+      - HOME_IP_CIDR
+    entrypoint: ["/entrypoint.sh"]
+    command: ["crowdsec"]
+    volumes:
+      - ./entrypoint.sh:/entrypoint.sh:ro
+      - ./whitelist.yaml.template:/whitelist.yaml.template:ro
+      - ./config:/etc/crowdsec
+      # The active acquisition file; kept in Git rather than the persistent
+      # config directory so every deployment reads Caddy's access log.
+      - ./acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ./data:/var/lib/crowdsec/data
+      - ../caddy/data:/var/log/caddy:ro # localtion of caddy logs dir
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

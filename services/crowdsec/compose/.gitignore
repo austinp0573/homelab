@@ -1,0 +1,4 @@
+.env
+data/
+config/parsers/s02-enrich/whitelist.yaml
+config/

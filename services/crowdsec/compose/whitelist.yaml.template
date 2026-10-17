@@ -1,0 +1,6 @@
+name: homelab/home-whitelist
+description: "Whitelist home IP/CIDR from remediation"
+whitelist:
+  reason: "Home network"
+  cidr:
+    - "${HOME_IP_CIDR}"
