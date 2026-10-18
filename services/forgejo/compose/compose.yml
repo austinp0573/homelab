@@ -1,0 +1,38 @@
+services:
+  caddy:
+    image: caddy:alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      FORGEJO_IP: ${FORGEJO_IP}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data:/data
+      - ./config:/config
+    networks:
+      - forgejo
+
+  server:
+    image: codeberg.org/forgejo/forgejo:15
+    container_name: forgejo
+    restart: unless-stopped
+    environment:
+      USER_UID: "3000"
+      USER_GID: "3000"
+      FORGEJO__server__DOMAIN: ${FORGEJO_IP}
+      FORGEJO__server__SSH_DOMAIN: ${FORGEJO_IP}
+      FORGEJO__server__ROOT_URL: https://${FORGEJO_IP}:3005/
+      FORGEJO__server__SSH_PORT: "222"
+      FORGEJO__security__REVERSE_PROXY_TRUSTED_PROXIES: "127.0.0.0/8,::1/128"
+    ports:
+      - "222:22"
+    volumes:
+      - ./forgejo:/data
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - forgejo
+
+networks:
+  forgejo:

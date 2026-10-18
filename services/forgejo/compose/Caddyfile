@@ -1,0 +1,9 @@
+{
+    admin off
+    default_sni {$FORGEJO_IP}
+}
+
+{$FORGEJO_IP}:3005 {
+    tls internal
+    reverse_proxy server:3000
+}
