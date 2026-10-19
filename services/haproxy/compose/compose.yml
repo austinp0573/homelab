@@ -10,5 +10,5 @@ services:
         max-size: "10m"
         max-file: "3"
     volumes:
-      - /etc/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - /etc/haproxy:/usr/local/etc/haproxy:ro
       - /etc/haproxy/certs:/etc/haproxy/certs:ro

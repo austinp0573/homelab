@@ -1,5 +1,13 @@
 # haproxy
 
+## resource use
+
+```bash
+CONTAINER ID   NAME           CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O     PIDS
+ksdlfkjsdkjj   haproxy        0.00%     91.31MiB / 7.761GiB   1.15%     274MB / 112MB     0B / 0B       5
+# can this is with minor load, but it's pre allocating a lot for connections, I can probably tune this down by half
+```
+
 * [https://www.haproxy.com/downloads](https://www.haproxy.com/downloads) to setup the haproxy performance repo
 
 * the commands (that might change, use the above link as the canonical source of truth):
