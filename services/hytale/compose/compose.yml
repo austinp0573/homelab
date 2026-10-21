@@ -1,0 +1,18 @@
+services:
+    hytale:
+        image: deinfreu/hytale-server:latest-alpine-liberica
+        container_name: hytale-server
+        environment:
+            SERVER_IP: "0.0.0.0"
+            SERVER_PORT: "5520"
+            PROD: "TRUE"
+            DEBUG: "TRUE"
+            TZ: "America/Chicago"
+        restart: unless-stopped
+        ports:
+          - "10.1.0.2:5520:5520/udp"
+        volumes:
+        - /srv/hytale-data:/home/container
+        - /srv/hytale-data/.machine-id:/etc/machine-id:ro
+        tty: true
+        stdin_open: true
