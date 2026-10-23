@@ -3,7 +3,7 @@ services:
     container_name: koffan
     image: ghcr.io/pansalut/koffan:latest
     environment:
-      - APP_PASSWORD=test123
+      - APP_PASSWORD=${KOFFAN_APP_PASSWORD}
       - APP_ENV=production
       - LOGIN_MAX_ATTEMPTS=10
       - LOGIN_WINDOW_MINUTES=10
