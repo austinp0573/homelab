@@ -1,0 +1,24 @@
+storage: /dir_where_you_want_stuff
+
+accounts:
+  myAccount:
+    email: email@gmail.com
+    acceptsTermsOfService: true
+
+challenges:
+  cf:
+    dns:
+      provider: cloudflare
+      envFile: /location_of_env
+      resolvers:
+        - langston.ns.cloudflare.com:53
+        - adelaide.ns.cloudflare.com:53
+      propagation:
+        wait: 60s
+
+certificates:
+  my-cert:
+    challenge: cf
+    domains:
+      - root_domain.org
+      - '*.test.root_domain.org'
