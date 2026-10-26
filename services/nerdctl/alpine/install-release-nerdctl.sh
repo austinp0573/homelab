@@ -3,7 +3,7 @@
 set -eou pipefail
 
 ARCH="amd64"
-VERSION="2.3.4"
+VERSION="2.3.5"
 RELEASE="nerdctl-${VERSION}-linux-${ARCH}.tar.gz"
 URL="https://github.com/containerd/nerdctl/releases/download/v${VERSION}/${RELEASE}"
 
@@ -29,7 +29,9 @@ printf "\n-----------------\n"
 printf "apk add ca-certificates containerd cni-plugins buildkit iptables\n"
 printf "\nWHICH I AM NOW DOING!!!!!!\n"
 
-apk add ca-certificates containerd cni-plugins buildkit iptables
+apk update
+# apk add ca-certificates containerd cni-plugins buildkit iptables
+apk add buildkit
 
 mkdir -p /etc/buildkit
 
@@ -42,7 +44,7 @@ cat << 'EOF' > /etc/buildkit/buildkitd.toml
   namespace = "default"
 EOF
 
-rc-update add containerd default
+# rc-update add containerd default
 rc-update add buildkitd default
-rc-service containerd start
+# rc-service containerd start
 rc-service buildkitd start
