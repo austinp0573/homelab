@@ -1,0 +1,176 @@
+x-netbox: &netbox
+  image: docker.io/netboxcommunity/netbox:${NETBOX_VERSION}
+  user: "netbox:root"
+  restart: unless-stopped
+
+  depends_on:
+    - postgres
+    - redis
+    - redis-cache
+
+  environment:
+    ALLOWED_HOSTS: "${NETBOX_ALLOWED_HOSTS}"
+    API_TOKEN_PEPPER_1: "${NETBOX_API_TOKEN_PEPPER_1}"
+
+    CORS_ORIGIN_ALLOW_ALL: "false"
+    CSRF_TRUSTED_ORIGINS: "${NETBOX_CSRF_TRUSTED_ORIGINS}"
+
+    DB_HOST: postgres
+    DB_NAME: netbox
+    DB_PASSWORD: "${POSTGRES_PASSWORD}"
+    DB_USER: netbox
+
+    GRAPHQL_ENABLED: "true"
+
+    # netbox's entrypoint waits for postgres itself.
+    # use a generous timeout because nerdctl compose does not reliably
+    # provide docker's depends_on service_healthy semantics.
+    MAX_DB_WAIT_TIME: "120"
+
+    MEDIA_ROOT: /opt/netbox/netbox/media
+    METRICS_ENABLED: "false"
+
+    REDIS_CACHE_DATABASE: "1"
+    REDIS_CACHE_HOST: redis-cache
+    REDIS_CACHE_PASSWORD: "${REDIS_CACHE_PASSWORD}"
+    REDIS_CACHE_SSL: "false"
+
+    REDIS_DATABASE: "0"
+    REDIS_HOST: redis
+    REDIS_PASSWORD: "${REDIS_PASSWORD}"
+    REDIS_SSL: "false"
+
+    RELEASE_CHECK_URL: "https://api.github.com/repos/netbox-community/netbox/releases"
+
+    SECRET_KEY: "${NETBOX_SECRET_KEY}"
+
+    # create the initial administrator interactively after first startup.
+    SKIP_SUPERUSER: "true"
+
+    TIME_ZONE: "America/Chicago"
+
+    WEBHOOKS_ENABLED: "true"
+
+    # disable unless you specifically decide to use the netbox copilot feature.
+    COPILOT_ENABLED: "false"
+
+  volumes:
+    - netbox-media:/opt/netbox/netbox/media
+    - netbox-reports:/opt/netbox/netbox/reports
+    - netbox-scripts:/opt/netbox/netbox/scripts
+
+  healthcheck:
+    test:
+      - CMD
+      - /opt/netbox/health.sh
+    start_period: 90s
+    interval: 15s
+    timeout: 3s
+    retries: 5
+
+
+services:
+  netbox:
+    <<: *netbox
+
+    ports:
+      - "${NETBOX_BIND_ADDRESS}:${NETBOX_PORT}:8080"
+
+
+  netbox-worker:
+    <<: *netbox
+
+    command:
+      - /opt/netbox/venv/bin/python
+      - /opt/netbox/netbox/manage.py
+      - rqworker
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "ps -aux | grep -v grep | grep -q rqworker || exit 1"
+      start_period: 20s
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+
+  postgres:
+    image: docker.io/postgres:18-alpine
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: netbox
+      POSTGRES_USER: netbox
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+
+    volumes:
+      - netbox-postgres:/var/lib/postgresql
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -q -t 2 -d "$$POSTGRES_DB" -U "$$POSTGRES_USER"'
+      start_period: 20s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  redis:
+    image: docker.io/valkey/valkey:9.1-alpine
+    restart: unless-stopped
+
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+
+    command:
+      - sh
+      - -c
+      - 'exec valkey-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
+
+    volumes:
+      - netbox-redis:/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'test "$$(valkey-cli --pass "$$REDIS_PASSWORD" ping)" = "PONG"'
+      start_period: 5s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+  redis-cache:
+    image: docker.io/valkey/valkey:9.1-alpine
+    restart: unless-stopped
+
+    environment:
+      REDIS_PASSWORD: "${REDIS_CACHE_PASSWORD}"
+
+    command:
+      - sh
+      - -c
+      - 'exec valkey-server --requirepass "$$REDIS_PASSWORD"'
+
+    volumes:
+      - netbox-redis-cache:/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'test "$$(valkey-cli --pass "$$REDIS_PASSWORD" ping)" = "PONG"'
+      start_period: 5s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+volumes:
+  netbox-media:
+  netbox-postgres:
+  netbox-redis:
+  netbox-redis-cache:
+  netbox-reports:
+  netbox-scripts:
