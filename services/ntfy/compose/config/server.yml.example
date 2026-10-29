@@ -1,0 +1,53 @@
+# Server
+base-url: "https://ntfy.example.org"
+listen-http: ":2586" # internal container port (matches CONTAINER_PORT in .env)
+behind-proxy: true
+
+# Access control
+auth-file: "/var/lib/ntfy/auth.db"
+auth-default-access: "deny-all"
+auth-users:
+  - "admin:$2b$10$bfZoz00hajrdM/orjTcmsu8Kp8Qc5lzwCsi1ZE7YLlThlp8h.WknO:admin"
+  - "user:$2b$10$ekiqYhnwthyflY2Mcf9jIOTsXhV5B/jVcAW5tnQjtMEfdXpUkHKAS:user"
+auth-access:
+  - "*:up*:write-only" # for unified-push
+  - "ntfyuser:sometopic*:read-write"
+auth-tokens:
+  - "ntfyadmin:tk_e6bm5a5d8w1m1pjj9s9s9cw5isgvm:admin_token-01"
+enable-login: true
+require-login: true
+enable-signup: false
+enable-reservations: false
+
+# Attachments
+attachment-cache-dir: "/var/cache/ntfy/attachments"
+attachment-file-size-limit: "25M"
+attachment-total-size-limit: "2G"
+attachment-expiry-duration: "24h"
+visitor-attachment-total-size-limit: "25M"
+visitor-attachment-daily-bandwidth-limit: "500M"
+
+# Message cache
+cache-file: "/var/cache/ntfy/cache.db"
+cache-duration: "7d"
+
+# Web push
+web-push-public-key: "BJoT_f9fZwxyO8Wwsx406IsJC_oKZ2iyNekjcvLLRp5sQaQy017l9kcdaaLHTBDo7M1MKFRCsR2gDqAglLz86yQ"
+web-push-private-key: "QaQy017l9kcdaaLHTBDo7M1MKFRCsR2gDqAglLz86yQ"
+web-push-file: "/var/lib/ntfy/webpush.db"
+web-push-email-address: "admin@tusko.org"
+
+# Email notifications (outgoing)
+# smtp-sender-addr: "smtp.example.com:587"
+# smtp-sender-from: "ntfy@example.com"
+# smtp-sender-user: "yoursmtpuser"
+# smtp-sender-pass: "yoursmtppass"
+# smtp-sender-verify: true
+
+# Email publishing (incoming)
+# smtp-server-listen: ":25"
+# smtp-server-domain: "ntfy.example.com"
+# smtp-server-addr-prefix: "ntfy-"
+
+# Upstream
+upstream-base-url: "https://ntfy.sh"

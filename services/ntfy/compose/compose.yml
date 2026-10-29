@@ -1,0 +1,36 @@
+# MUST RUN:
+# cd /opt/ntfy
+# mkdir -p data cache/attachments
+# chown -R 1020:1020 data cache
+# chmod -R 770 data cache
+
+services:
+  ntfy:
+    image: ${NTFY_IMAGE}
+    container_name: ${CONTAINER_NAME}
+    command:
+      - serve
+    env_file:
+      - .env
+    environment:
+      - TZ
+    user: "${PUID}:${PGID}"
+    volumes:
+      - ./config:/etc/ntfy:ro
+      - ${DATA_DIR}:/var/lib/ntfy
+      - ${CACHE_DIR}:/var/cache/ntfy
+    ports:
+      - "${HOST_BIND}:${HOST_PORT}:${CONTAINER_PORT}"
+      - "0.0.0.0:2525:2525" # for custom smtp(2525) messages
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'wget -qO- http://127.0.0.1:${CONTAINER_PORT:-2586}/v1/health | grep -q ''"healthy":true'' || exit 1',
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    init: true

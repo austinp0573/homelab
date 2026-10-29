@@ -1,4 +1,17 @@
-# ntfy (homelab-edge)
+# ntfy compose setup
+
+```bash
+# Create system group
+sudo groupadd -g 1020 ntfy
+
+# Create system user bound to group with no login shell
+sudo useradd -r -u 1020 -g ntfy -s /usr/sbin/nologin ntfy
+```
+
+```bash
+sudo chown -R ntfy:ntfy /etc/ntfy /var/lib/ntfy
+sudo chmod -R 750 /etc/ntfy /var/lib/ntfy
+```
 
 ## resource estimates
 
@@ -41,7 +54,21 @@ same files either way.
 10. wire haproxy - `haproxy/backend.example.cfg`
 11. point publishers at the public URL - `notes/integrations.md`
 
-## auth model
+## auth
+
+- create `bcrypt` hashed user:password
+
+```bash
+htpasswd -nbB -C <salt count (12)> user password
+```
+
+- create auth token
+
+```bash
+python3 -c 'import secrets, string; print("tk_" + "".join(secrets.choice(string.ascii_lowercase + string.digits) for _ in range(29)))'
+```
+
+
 
 - `auth-default-access: deny-all`
 - one **admin** user for browser / phone (login)
@@ -95,5 +122,5 @@ nerdctl compose logs -f
 
 
 &nbsp;
-
+ 
 **466f724a616e6574**
