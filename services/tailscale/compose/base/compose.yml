@@ -1,0 +1,16 @@
+services:
+  tailscale:
+    image: ${TAILSCALE_IMAGE}
+    container_name: ${TS_CONTAINER_NAME}
+    hostname: ${TS_HOSTNAME} # will be ts hostname if not set in .env
+    env_file:
+      - .env
+    volumes:
+      - ./ts-state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    network_mode: host
+    restart: ${RESTART_POLICY}
