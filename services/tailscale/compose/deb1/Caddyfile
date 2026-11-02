@@ -1,0 +1,7 @@
+:8080 {
+    reverse_proxy {$REMOTE_TARGET_1}:80
+}
+
+:8081 {
+    reverse_proxy {$REMOTE_TARGET_2}:80
+}

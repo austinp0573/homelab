@@ -1,8 +1,8 @@
 services:
-  tailscale-deb1:
+  tailscale:
     image: tailscale/tailscale:latest
-    container_name: tailscale-client
-    hostname: deb1-container
+    container_name: tailscale-bridge
+    hostname: deb1-tailscale-bridge
     environment:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
@@ -16,7 +16,28 @@ services:
     cap_add:
       - NET_ADMIN
       - NET_RAW
+    ports:
+      - "8080:8080"
+      - "8081:8081"
     restart: unless-stopped
+  
+  caddy:
+    image: caddy:2.11.4-alpine
+    container_name: caddy-ts-proxy
+    network_mode: "container:tailscale-bridge"
+    depends_on:
+      - tailscale
+    environment:
+      - REMOTE_TARGET_1=${REMOTE_TARGET_1}
+      - REMOTE_TARGET_2=${REMOTE_TARGET_2}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
 
 volumes:
   ts-state:
+  caddy-data:
+  caddy-config:
