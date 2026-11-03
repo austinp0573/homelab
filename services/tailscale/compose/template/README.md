@@ -53,6 +53,21 @@ default is kernel TUN (`TS_USERSPACE=false`) with `privileged: true`. set `TS_US
 
 sample nginx is published on the host at `HOST_PORT` (8080 by default) because its ports live on the shared netns with the tailscale service. for tailnet-only, delete the `ports:` block under `tailscale` in `compose.yml`.
 
+- **NOTE**
+
+```bash
+# Enable IPv4 & IPv6 forwarding on the host
+sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.ipv6.conf.all.forwarding=1
+```
+
+create `/etc/sysctl.d/99-tailscale.conf`
+
+```bash
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 1
+```
+
 ## state
 
 named volume `ts-state` -> `/var/lib/tailscale`. keeps node identity across restarts. `TS_AUTH_ONCE=true` so it does not force login every start.
