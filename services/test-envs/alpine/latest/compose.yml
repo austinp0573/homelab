@@ -1,0 +1,11 @@
+services:
+  alpine:
+    image: alpine:latest
+    container_name: alpine-env
+    working_dir: /root
+    network_mode: host
+    tty: true
+    volumes:
+      -  ./data:/root/data
+    restart: unless-stopped
+
