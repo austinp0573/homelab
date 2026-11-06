@@ -1,0 +1,107 @@
+# shellcheck shell=bash
+# container bashrc
+
+# return if not running interactively
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+toolbox_kubeconfig=${KUBECONFIG:-}
+toolbox_talosconfig=${TALOSCONFIG:-}
+toolbox_histfile=${HISTFILE:-$HOME/.bash_history}
+if [[ -f $HOME/.bash_aliases ]]; then
+    source "$HOME/.bash_aliases"
+fi
+export KUBECONFIG=$toolbox_kubeconfig TALOSCONFIG=$toolbox_talosconfig HISTFILE=$toolbox_histfile
+unset toolbox_kubeconfig toolbox_talosconfig toolbox_histfile
+
+if [[ ${TOOLBOX_BANNER:-} == 1 && -z ${TOOLBOX_BANNER_SHOWN:-} ]]; then
+    command -v fastfetch >/dev/null 2>&1 && fastfetch
+    printf '\nwelcome to %s %s - DATE: %s\n\n' "$HOSTNAME" "$(whoami)" "$(date)"
+    export TOOLBOX_BANNER_SHOWN=1
+fi
+
+_toolbox_context() {
+    local kubernetes talos=none
+    kubernetes=$(command kubectl config view --minify -o 'jsonpath={.current-context}/{..namespace}' 2>/dev/null) || kubernetes=none
+    if [[ -f ${TALOSCONFIG:-} ]]; then
+        talos=$(command yq -r '.context // "none"' "$TALOSCONFIG" 2>/dev/null) || talos=none
+    fi
+    kubernetes=${kubernetes//[^a-zA-Z0-9._\/:@-]/?}
+    talos=${talos//[^a-zA-Z0-9._\/:@-]/?}
+    printf '[k8s:%s talos:%s]' "${kubernetes:-none}" "$talos"
+}
+
+# prompt
+if [ "$(id -u)" -eq 0 ]; then
+    export PS1='\[\033[01;31m\]\u@\h\[\033[00m\] $(_toolbox_context):\[\033[01;34m\]\w\[\033[00m\]# '
+else
+    export PS1='\[\033[01;32m\]\u@\h\[\033[00m\] $(_toolbox_context):\[\033[01;34m\]\w\[\033[00m\]\$ '
+fi
+
+# history settings
+shopt -s histappend
+shopt -s checkwinsize
+
+_toolbox_history() {
+    local previous_status=$?
+    history -a
+    history -n
+    return "$previous_status"
+}
+if [[ " ${PROMPT_COMMAND[*]-} " != *' _toolbox_history '* ]]; then
+    PROMPT_COMMAND+=(_toolbox_history)
+fi
+
+# enable bash completion
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+fi
+if [[ -f /usr/share/bash-completion/completions/kubectl ]]; then
+    source /usr/share/bash-completion/completions/kubectl
+    complete -o default -F __start_kubectl k
+    complete -o default -F __start_kubectl kubecolor
+fi
+if command -v fzf >/dev/null 2>&1; then
+    # shellcheck source=/dev/null
+    source <(fzf --bash)
+fi
+
+# aliases
+alias ls='ls --color=auto'
+alias l='ls --color=auto -Alrth'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias ip='ip -color=auto'
+alias df='df -h'
+alias free='free -h'
+alias top='top -d 1'
+alias tree='tree -aAC'
+alias k='kubectl'
+alias rg='rg -n'
+
+# kubecolor
+alias kubectl='kubecolor'
+
+if ! command -v nerdctl >/dev/null 2>&1; then
+    unalias nerd nps nexec 2>/dev/null || true
+fi
+
+# cheat sheet helper
+c() {
+    (( $# )) || { printf 'Usage: c QUERY...\n' >&2; return 2; }
+    local query
+    query=$(jq -rn --arg query "$*" '$query | @uri') || return
+    curl --proto '=https' --tlsv1.2 -fsSL --connect-timeout 5 --max-time 20 "https://cht.sh/$query"
+}
+
+kpf() {
+    (( $# >= 2 )) || { printf 'Usage: kpf RESOURCE REMOTE_PORT [kubectl options]\n' >&2; return 2; }
+    local resource=$1 remote_port=$2
+    shift 2
+    command kubectl port-forward --address=0.0.0.0 "$resource" "$FORWARD_CONTAINER_PORT:$remote_port" "$@"
+}

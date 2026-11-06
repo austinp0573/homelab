@@ -1,0 +1,13 @@
+# cluster credentials
+kubeconfig/*
+!kubeconfig/.gitkeep
+
+
+# runtime application state
+state/*
+!state/.gitkeep
+
+
+# scratch / working directory
+workspace/*
+!workspace/.gitkeep

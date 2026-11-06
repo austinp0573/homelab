@@ -1,0 +1,13 @@
+.env
+.env.*
+!/kubectl/compose/.env
+/.local/
+/kubectl/compose/kubeconfig/
+/kubectl/compose/state/
+/kubectl/compose/workspace/
+*.agekey
+*.pem
+*.key
+*.pcap
+*.pcapng
+support-*.zip

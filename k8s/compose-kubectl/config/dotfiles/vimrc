@@ -1,0 +1,65 @@
+set nocompatible
+filetype plugin indent on
+syntax on
+
+set encoding=utf-8
+set fileencoding=utf-8
+
+set number
+" set relativenumber
+set cursorline
+set scrolloff=8
+set wrap
+set linebreak
+" set colorcolumn=80
+
+set hidden
+set autoread
+set backspace=indent,eol,start
+
+set incsearch
+set hlsearch
+set ignorecase
+set smartcase
+
+set wildmenu
+set wildmode=list:longest
+nnoremap <Esc> :nohlsearch<CR>
+
+set tabstop=2
+set shiftwidth=2
+set expandtab
+set autoindent
+set smartindent
+
+set undofile
+set noswapfile
+set nobackup
+
+" augroup markdown
+"   autocmd!
+"   autocmd FileType markdown setlocal spell
+"   autocmd FileType markdown setlocal spelllang=en_us
+"   autocmd FileType markdown setlocal conceallevel=2
+"   autocmd FileType markdown setlocal textwidth=80
+" augroup END
+
+set splitbelow
+set splitright
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+let mapleader = " "
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <leader>e :Explore<CR>
+nnoremap <leader>d :r !date +\%A:\%Y-\%m-\%d<CR>
+nnoremap j gj
+nnoremap k gk
+nnoremap <leader>t i<C-R>=strftime("%I:%M:%S-%p")<CR>
+
+let g:netrw_banner = 0
+let g:netrw_liststyle = 3
+let g:netrw_winsize = 25

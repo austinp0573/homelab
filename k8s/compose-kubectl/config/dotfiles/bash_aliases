@@ -1,0 +1,2 @@
+alias w='curl "wttr.in/38.90,-94.62?u"'
+alias tree='tree -a -I .git'

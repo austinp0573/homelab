@@ -1,0 +1,4 @@
+Host *
+    UserKnownHostsFile /state/ssh/known_hosts
+    StrictHostKeyChecking ask
+    ForwardAgent no

@@ -1,0 +1,129 @@
+services:
+  kube:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${BASE_IMAGE_REPOSITORY}:${KUBECTL_VERSION}
+        USER_NAME: ${USER_NAME}
+        USER_UID: ${USER_UID}
+        USER_GID: ${USER_GID}
+        KUBERNETES_VERSION: ${KUBERNETES_VERSION}
+        KUBECOLOR_VERSION: ${KUBECOLOR_VERSION}
+        HELM_VERSION: ${HELM_VERSION}
+        HELM_DIFF_VERSION: ${HELM_DIFF_VERSION}
+        HELM_SECRETS_VERSION: ${HELM_SECRETS_VERSION}
+        KUSTOMIZE_VERSION: ${KUSTOMIZE_VERSION}
+        K9S_VERSION: ${K9S_VERSION}
+        STERN_VERSION: ${STERN_VERSION}
+        KUBECONFORM_VERSION: ${KUBECONFORM_VERSION}
+        KUBE_LINTER_VERSION: ${KUBE_LINTER_VERSION}
+        CONFTEST_VERSION: ${CONFTEST_VERSION}
+        KUBE_SCORE_VERSION: ${KUBE_SCORE_VERSION}
+        PLUTO_VERSION: ${PLUTO_VERSION}
+        KUBENT_VERSION: ${KUBENT_VERSION}
+        DYFF_VERSION: ${DYFF_VERSION}
+        HELMFILE_VERSION: ${HELMFILE_VERSION}
+        SOPS_VERSION: ${SOPS_VERSION}
+        TALOSCTL_VERSION: ${TALOSCTL_VERSION}
+        KREW_VERSION: ${KREW_VERSION}
+        KUBELOGIN_VERSION: ${KUBELOGIN_VERSION}
+        FLUX_VERSION: ${FLUX_VERSION}
+        CILIUM_CLI_VERSION: ${CILIUM_CLI_VERSION}
+        HUBBLE_VERSION: ${HUBBLE_VERSION}
+        CRANE_VERSION: ${CRANE_VERSION}
+        ORAS_VERSION: ${ORAS_VERSION}
+        RESTIC_VERSION: ${RESTIC_VERSION}
+        RCLONE_VERSION: ${TOOLBOX_RCLONE_VERSION}
+        # OMNICTL_VERSION: ${OMNICTL_VERSION}
+        # ARGOCD_VERSION: ${ARGOCD_VERSION}
+        # ISTIOCTL_VERSION: ${ISTIOCTL_VERSION}
+        # LINKERD_VERSION: ${LINKERD_VERSION}
+        # CALICOCTL_VERSION: ${CALICOCTL_VERSION}
+        # REGCTL_VERSION: ${REGCTL_VERSION}
+        # COSIGN_VERSION: ${COSIGN_VERSION}
+        # SYFT_VERSION: ${SYFT_VERSION}
+        # TRIVY_VERSION: ${TRIVY_VERSION}
+        # KYVERNO_VERSION: ${KYVERNO_VERSION}
+        # CHAINSAW_VERSION: ${CHAINSAW_VERSION}
+        # VELERO_VERSION: ${VELERO_VERSION}
+        # OPENTOFU_VERSION: ${OPENTOFU_VERSION}
+
+    image: ${IMAGE_NAME}:${IMAGE_TAG}
+    hostname: ${TOOLBOX_HOSTNAME}
+    container_name: ${CONTAINER_NAME}
+    restart: ${RESTART_POLICY}
+    working_dir: /workspace
+    environment:
+      # identity / shell
+      HOME: /home/${USER_NAME}
+      EDITOR: ${TOOLBOX_EDITOR}
+      VISUAL: ${TOOLBOX_EDITOR}
+      KUBE_EDITOR: ${TOOLBOX_EDITOR}
+      PAGER: ${TOOLBOX_PAGER}
+      TERM: ${TOOLBOX_TERM}
+      TZ: ${TOOLBOX_TZ}
+      TOOLBOX_BANNER: ${TOOLBOX_BANNER}
+      HISTCONTROL: ${TOOLBOX_HISTCONTROL}
+      HISTSIZE: ${TOOLBOX_HISTSIZE}
+      HISTFILESIZE: ${TOOLBOX_HISTFILESIZE}
+      BAT_PAGING: ${TOOLBOX_BAT_PAGING}
+      FORWARD_CONTAINER_PORT: ${FORWARD_CONTAINER_PORT}
+      # kubernetes
+      KUBECONFIG: /config/cluster/${KUBECONFIG_NAME}
+      TALOSCONFIG: /config/cluster/${TALOSCONFIG_NAME}
+      # xdg application state
+      # - k9s and other modern cli applications can persist their configuration
+      # - here without writing anything important into the container filesystem.
+      XDG_CONFIG_HOME: /state/xdg/config
+      XDG_CACHE_HOME: /state/xdg/cache
+      XDG_DATA_HOME: /state/xdg/data
+      XDG_STATE_HOME: /state/xdg/state
+      # helm
+      HELM_CONFIG_HOME: /state/helm/config
+      HELM_CACHE_HOME: /state/helm/cache
+      HELM_DATA_HOME: /state/helm/data
+      HELM_PLUGINS: /opt/helm/plugins
+      # registry clients
+      DOCKER_CONFIG: ${DOCKER_CONFIG}
+      REGISTRY_AUTH_FILE: ${REGISTRY_AUTH_FILE}
+      # regctl, optional
+      # REGCTL_CONFIG: ${REGCTL_CONFIG}
+      # sops / age
+      SOPS_AGE_KEY:
+      SOPS_AGE_KEY_FILE: ${SOPS_AGE_KEY_FILE}
+      # shell state
+      HISTFILE: /state/bash/history
+      LESSHISTFILE: /state/bash/less-history
+      VIMINIT: 'source $$HOME/.vimrc | set viminfofile=/state/vim/viminfo directory=/state/vim// backupdir=/state/vim// undodir=/state/vim//'
+
+    ports:
+      - "${FORWARD_BIND_ADDRESS}:${FORWARD_PORT}:${FORWARD_CONTAINER_PORT}"
+
+    volumes:
+      # kubernetes credentials
+      - ${CLUSTER_CONFIG_DIR}:/config/cluster
+      # persistent application/shell state
+      - ${STATE_DIR}:/state
+      # omnictl, optional
+      # - ${STATE_DIR}/talos:/home/${USER_NAME}/.talos
+      # istioctl, optional
+      # - ${STATE_DIR}/xdg/config/istioctl:/home/${USER_NAME}/.istioctl
+      # velero cli, optional
+      # - ${STATE_DIR}/xdg/config/velero:/home/${USER_NAME}/.config/velero
+      # ansible, optional
+      # - ${STATE_DIR}/ansible:/home/${USER_NAME}/.ansible
+      # aws cli, optional
+      # - ${STATE_DIR}/aws:/home/${USER_NAME}/.aws
+      # working files
+      - ${WORKSPACE_DIR}:/workspace
+      # dotfiles
+      - ${DOTFILES_DIR}/bashrc:/home/${USER_NAME}/.bashrc
+      - ${DOTFILES_DIR}/bash_aliases:/home/${USER_NAME}/.bash_aliases
+      - ${DOTFILES_DIR}/gitconfig:/home/${USER_NAME}/.gitconfig
+      - ${DOTFILES_DIR}/vimrc:/home/${USER_NAME}/.vimrc
+      - ${DOTFILES_DIR}/tmux.conf:/home/${USER_NAME}/.tmux.conf
+      # kubernetes client state
+      - ${STATE_DIR}/kube:/home/${USER_NAME}/.kube
+      - ${STATE_DIR}/ssh:/home/${USER_NAME}/.ssh
+      - ${SSH_CONFIG_FILE}:/home/${USER_NAME}/.ssh/config:ro
