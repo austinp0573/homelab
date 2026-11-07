@@ -116,7 +116,7 @@ services:
       # aws cli, optional
       # - ${STATE_DIR}/aws:/home/${USER_NAME}/.aws
       # working files
-      - ${WORKSPACE_DIR}:/workspace
+      - ${WORKSPACE_DIR}:/home/${USER_NAME}/kates
       # dotfiles
       - ${DOTFILES_DIR}/bashrc:/home/${USER_NAME}/.bashrc
       - ${DOTFILES_DIR}/bash_aliases:/home/${USER_NAME}/.bash_aliases

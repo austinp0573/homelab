@@ -13,6 +13,9 @@ set wrap
 set linebreak
 " set colorcolumn=80
 
+" # fix issue with compose saving to alternative inodes
+set backupcopy=yes
+
 set hidden
 set autoread
 set backspace=indent,eol,start
