@@ -161,17 +161,17 @@ RUN set -eu; \
 
 
 # omnictl, optional
-# ARG OMNICTL_VERSION
-# RUN set -eu; \
-#     arch="$(cat /tmp/tool-arch)"; \
-#     tmp="$(mktemp -d)"; \
-#     curl -fsSL --retry 3 \
-#         -o "$tmp/omnictl" \
-#         "https://github.com/siderolabs/omni/releases/download/${OMNICTL_VERSION}/omnictl-linux-${arch}"; \
-#     install -m 0755 "$tmp/omnictl" /usr/local/bin/omnictl; \
-#     omnictl --help > /dev/null; \
-#     omnictl completion bash > /usr/share/bash-completion/completions/omnictl; \
-#     rm -rf "$tmp"
+ARG OMNICTL_VERSION
+RUN set -eu; \
+    arch="$(cat /tmp/tool-arch)"; \
+    tmp="$(mktemp -d)"; \
+    curl -fsSL --retry 3 \
+        -o "$tmp/omnictl" \
+        "https://github.com/siderolabs/omni/releases/download/${OMNICTL_VERSION}/omnictl-linux-${arch}"; \
+    install -m 0755 "$tmp/omnictl" /usr/local/bin/omnictl; \
+    omnictl --help > /dev/null; \
+    omnictl completion bash > /usr/share/bash-completion/completions/omnictl; \
+    rm -rf "$tmp"
 
 
 # ======================================================================

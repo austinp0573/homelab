@@ -35,7 +35,7 @@ services:
         ORAS_VERSION: ${ORAS_VERSION}
         RESTIC_VERSION: ${RESTIC_VERSION}
         RCLONE_VERSION: ${TOOLBOX_RCLONE_VERSION}
-        # OMNICTL_VERSION: ${OMNICTL_VERSION}
+        OMNICTL_VERSION: ${OMNICTL_VERSION}
         # ARGOCD_VERSION: ${ARGOCD_VERSION}
         # ISTIOCTL_VERSION: ${ISTIOCTL_VERSION}
         # LINKERD_VERSION: ${LINKERD_VERSION}
@@ -106,7 +106,7 @@ services:
       # persistent application/shell state
       - ${STATE_DIR}:/state
       # omnictl, optional
-      # - ${STATE_DIR}/talos:/home/${USER_NAME}/.talos
+      - ${STATE_DIR}/omni:/home/${USER_NAME}/.talos
       # istioctl, optional
       # - ${STATE_DIR}/xdg/config/istioctl:/home/${USER_NAME}/.istioctl
       # velero cli, optional
