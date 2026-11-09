@@ -1,0 +1,1 @@
+# Reusable storage platform resources.

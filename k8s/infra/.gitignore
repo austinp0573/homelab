@@ -1,0 +1,25 @@
+# Keep these catalogs trackable despite repository-wide directory-name exclusions.
+!/networking/
+!/security/
+
+# Plaintext client and generated machine credentials; track SOPS siblings instead.
+kubeconfig
+talosconfig
+omniconfig
+secrets.yaml
+secrets.yml
+controlplane.yaml
+worker.yaml
+join-omni.yaml
+*.secret.yaml
+*.secret.yml
+*.decrypted.yaml
+*.decrypted.yml
+*.key
+*.pem
+*.pgp
+*.p12
+*.pfx
+
+# Existing Image Factory notes contain an embedded join token.
+/prov/sidero/omni/image-factory/omni-test-00
