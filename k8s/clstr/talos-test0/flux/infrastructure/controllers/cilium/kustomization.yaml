@@ -1,0 +1,4 @@
+# Cluster-specific Cilium configuration; preserved manifests and values are not enabled.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

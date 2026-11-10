@@ -1,0 +1,4 @@
+# Cluster-specific platform resources that depend on installed controllers and CRDs.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

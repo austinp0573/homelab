@@ -1,0 +1,4 @@
+# Cluster-specific nginx-test-0 application selections and overrides.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

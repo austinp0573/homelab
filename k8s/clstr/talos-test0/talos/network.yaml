@@ -1,0 +1,32 @@
+---
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+# Specifies NTP configuration to sync the time over network.
+ntp:
+    # Specifies time (NTP) servers to use for setting the system time.
+    servers:
+        - pool.ntp.org
+---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: eth0 # Name of the link (interface).
+up: true # Bring the link up or down.
+mtu: 1500 # Configure LinkMTU (Maximum Transmission Unit) for the link.
+# Configure addresses to be statically assigned to the link.
+addresses:
+    - address: 10.0.90.100/24 # IP address to be assigned to the link.
+# Configure routes to be statically created via the link.
+routes:
+    - gateway: 10.0.90.1 # The route's gateway (if empty, creates link scope route).
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+hostname: k8c-01 # A static hostname to set for the machine.
+---
+apiVersion: v1alpha1
+kind: ResolverConfig
+# A list of nameservers (DNS servers) to use for resolving domain names.
+nameservers:
+    - address: 1.1.1.1 # The IP address of the nameserver.
+    - address: 1.0.0.1
+    - address: 9.9.9.9
