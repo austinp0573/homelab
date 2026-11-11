@@ -1,0 +1,18 @@
+# Plaintext credentials; track SOPS-encrypted siblings instead.
+kubeconfig
+talosconfig
+omniconfig
+secrets.yaml
+secrets.yml
+controlplane.yaml
+worker.yaml
+join-omni.yaml
+*.secret.yaml
+*.secret.yml
+*.decrypted.yaml
+*.decrypted.yml
+*.key
+*.pem
+*.pgp
+*.p12
+*.pfx
