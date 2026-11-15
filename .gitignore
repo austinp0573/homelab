@@ -45,3 +45,4 @@ scripts/legacy/
 *.age
 !.sops.env
 CLEANUP.md
+.nfs00*

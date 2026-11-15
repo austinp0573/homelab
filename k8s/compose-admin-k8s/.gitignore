@@ -1,13 +1,43 @@
-# cluster credentials
-kubeconfig/*
-!kubeconfig/.gitkeep
+# Local Compose settings
+/.env
 
+# Legacy credential/scratch locations; keep any leftovers private.
+/kubeconfig/
+/workspace/
+/state/cluster/
+/state/omni/
 
-# runtime application state
-state/*
-!state/.gitkeep
+# Live client credentials and caches; encrypted siblings can be versioned.
+/state/kube/*
+!/state/kube/.gitkeep
+!/state/kube/*.sops.yaml
+/state/talos/*
+!/state/talos/.gitkeep
+!/state/talos/*.sops.yaml
+!/state/talos/omni/
+/state/talos/omni/*
+!/state/talos/omni/.gitkeep
+!/state/talos/omni/*.sops.yaml
 
+# Private identities and shell/editor state
+/state/ssh/
+/state/sops/
+/state/bash/
+/state/vim/
 
-# scratch / working directory
-workspace/*
-!workspace/.gitkeep
+# Helm repository configuration can contain credentials.
+/state/helm/config/*
+!/state/helm/config/*.sops.yaml
+/state/helm/cache/
+/state/helm/data/
+
+# XDG configuration is trackable except known credential stores.
+/state/xdg/config/registry/*
+!/state/xdg/config/registry/*.sops.yaml
+/state/xdg/config/regctl/*
+!/state/xdg/config/regctl/*.sops.yaml
+/state/xdg/cache/
+/state/xdg/data/
+/state/xdg/state/
+
+README.md
