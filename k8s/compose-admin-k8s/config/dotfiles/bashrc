@@ -65,6 +65,18 @@ if [[ -f /usr/share/bash-completion/completions/kubectl ]]; then
     complete -o default -F __start_kubectl k
     complete -o default -F __start_kubectl kubecolor
 fi
+if [[ -f /usr/share/bash-completion/completions/talosctl ]]; then
+    source /usr/share/bash-completion/completions/talosctl
+    complete -o default -F __start_talosctl t
+fi
+if [[ -f /usr/share/bash-completion/completions/omnictl ]]; then
+    source /usr/share/bash-completion/completions/omnictl
+    complete -o default -F __start_omnictl o
+fi
+if [[ -f /usr/share/bash-completion/completions/helm ]]; then
+    source /usr/share/bash-completion/completions/helm
+    complete -o default -F __start_helm helm
+fi
 if command -v fzf >/dev/null 2>&1; then
     # shellcheck source=/dev/null
     source <(fzf --bash)

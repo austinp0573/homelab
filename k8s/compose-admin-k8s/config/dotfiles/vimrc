@@ -16,6 +16,11 @@ set linebreak
 " # fix issue with compose saving to alternative inodes
 set backupcopy=yes
 
+" F5 toggles visibility for non-visible chars
+set listchars=tab:>-,space:.,trail:~,eol:$,nbsp:+
+nnoremap <F5> :set list!<CR>
+
+
 set hidden
 set autoread
 set backspace=indent,eol,start
