@@ -125,6 +125,20 @@ RUN set -eu; \
     rm -rf "$tmp"
 
 
+# radar
+ARG RADAR_VERSION
+RUN set -eu; \
+    arch="$(cat /tmp/tool-arch)"; \
+    tmp="$(mktemp -d)"; \
+    curl -fsSL --retry 3 \
+        -o "$tmp/radar.tar.gz" \
+        "https://github.com/skyhook-io/radar/releases/download/${RADAR_VERSION}/radar_${RADAR_VERSION}_linux_${arch}.tar.gz"; \
+    tar -xzf "$tmp/radar.tar.gz" -C "$tmp"; \
+    install -m 0755 "$tmp/kubectl-radar" /usr/local/bin/kubectl-radar; \
+    kubectl radar --version; \
+    rm -rf "$tmp"
+
+
 # stern
 ARG STERN_VERSION
 RUN set -eu; \
