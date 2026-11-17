@@ -15,6 +15,7 @@ services:
         HELM_SECRETS_VERSION: ${HELM_SECRETS_VERSION}
         KUSTOMIZE_VERSION: ${KUSTOMIZE_VERSION}
         K9S_VERSION: ${K9S_VERSION}
+        RADAR_VERSION: ${RADAR_VERSION}
         STERN_VERSION: ${STERN_VERSION}
         KUBECONFORM_VERSION: ${KUBECONFORM_VERSION}
         KUBE_LINTER_VERSION: ${KUBE_LINTER_VERSION}
@@ -69,6 +70,8 @@ services:
       HISTFILESIZE: ${TOOLBOX_HISTFILESIZE}
       BAT_PAGING: ${TOOLBOX_BAT_PAGING}
       FORWARD_CONTAINER_PORT: ${FORWARD_CONTAINER_PORT}
+      # radar
+      RADAR_CONTAINER_PORT: ${RADAR_CONTAINER_PORT}
       # kubernetes
 
       # if defined in .env they will be passed to the container
@@ -102,6 +105,7 @@ services:
 
     ports:
       - "${FORWARD_BIND_ADDRESS}:${FORWARD_PORT}:${FORWARD_CONTAINER_PORT}"
+      - "${RADAR_BIND_ADDRESS}:${RADAR_PORT}:${RADAR_CONTAINER_PORT}"
 
     volumes:
       # persistent application/shell state
@@ -109,6 +113,8 @@ services:
       # default Kubernetes, Talos, and Omni client directories
       - ${STATE_DIR}/kube:/home/${USER_NAME}/.kube
       - ${STATE_DIR}/talos:/home/${USER_NAME}/.talos
+      # radar settings and optional timeline database
+      - ${STATE_DIR}/radar:/home/${USER_NAME}/.radar
       # istioctl, optional
       # - ${STATE_DIR}/xdg/config/istioctl:/home/${USER_NAME}/.istioctl
       # velero cli, optional
@@ -132,3 +138,5 @@ services:
       # ssh state
       - ${STATE_DIR}/ssh:/home/${USER_NAME}/.ssh
       - ${SSH_CONFIG_FILE}:/home/${USER_NAME}/.ssh/config:ro
+      # sops config
+      - ${SOPS_CONFIG_FILE}:/home/${USER_NAME}/.sops.yaml
