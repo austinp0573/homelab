@@ -16,11 +16,11 @@ fi
 export KUBECONFIG=$toolbox_kubeconfig TALOSCONFIG=$toolbox_talosconfig HISTFILE=$toolbox_histfile
 unset toolbox_kubeconfig toolbox_talosconfig toolbox_histfile
 
-if [[ ${TOOLBOX_BANNER:-} == 1 && -z ${TOOLBOX_BANNER_SHOWN:-} ]]; then
-    command -v fastfetch >/dev/null 2>&1 && fastfetch
-    printf '\nwelcome to %s %s - DATE: %s\n\n' "$HOSTNAME" "$(whoami)" "$(date)"
-    export TOOLBOX_BANNER_SHOWN=1
-fi
+#if [[ ${TOOLBOX_BANNER:-} == 1 && -z ${TOOLBOX_BANNER_SHOWN:-} ]]; then
+#    command -v fastfetch >/dev/null 2>&1 && fastfetch
+#    printf '\nwelcome to %s %s - DATE: %s\n\n' "$HOSTNAME" "$(whoami)" "$(date)"
+#    export TOOLBOX_BANNER_SHOWN=1
+#fi
 
 _toolbox_context() {
     local kubernetes talos=none
