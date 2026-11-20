@@ -1,0 +1,16 @@
+{
+  "lsp": {
+    "yaml-language-server": {
+      "settings": {
+        "yaml": {
+          "schemas": {
+            "./k8s/infra/prov/sidero/talos/patch.schema.json": [
+              "k8s/infra/prov/sidero/talos/**/*.patch.yaml",
+              "k8s/clstr/*/talos/**/*.patch.yaml"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
