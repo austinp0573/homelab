@@ -1,0 +1,21 @@
+version: 5
+daemon:
+  log_level: info
+  admin_group: sudo
+  disable_clocks_cleanup: false
+apply_settings_timer: 5
+current_profile: null
+auto_switch_profiles: false
+gpus:
+ 1002:7551-1DA2:E499-0000:05:00.0:
+   fan_control_enabled: true
+   fan_control_settings:
+     mode: curve
+     temperature_key: junction
+     interval_ms: 500
+     curve:
+       30: 0.2
+       50: 0.4
+       65: 0.5
+       75: 0.8
+       85: 0.9
