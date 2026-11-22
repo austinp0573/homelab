@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Talos strategic-merge patch document",
+  "description": "Each YAML document is a partial Talos configuration mapping, not an RFC 6902 JSON Patch array. This schema checks document shape and common field types; validate merged configuration with talosctl for Talos-specific semantics.",
+  "type": "object",
+  "properties": {
+    "version": { "type": "string" },
+    "apiVersion": { "type": "string" },
+    "kind": { "type": "string" },
+    "name": { "type": "string" },
+    "debug": { "type": "boolean" },
+    "persist": { "type": "boolean" },
+    "machine": { "type": "object" },
+    "cluster": { "type": "object" },
+    "$patch": { "type": "string" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,11 @@
+# CONTROL-PLANE ONLY: Talos >=1.14 cluster add-on prerequisites for Cilium.
+# Apply after control-plane defaults at the same machine-set scope.
+# Workers have neither built-in add-on document; do not apply this patch to them.
+# This disables Flannel/kube-proxy deployment; it does NOT install Cilium.
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
