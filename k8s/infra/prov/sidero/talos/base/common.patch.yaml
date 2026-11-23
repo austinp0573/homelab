@@ -1,0 +1,12 @@
+# explicit DNS for static nodes and the local API endpoint used by Cilium.
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: 1.1.1.1
+    protocol: Do53
+  - address: 8.8.8.8
+    protocol: Do53
+---
+apiVersion: v1alpha1
+kind: KubePrismConfig
+port: 7445

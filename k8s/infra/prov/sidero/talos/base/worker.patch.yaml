@@ -1,0 +1,10 @@
+# Explicit Talos v1.14.5 worker registration defaults; Omni assigns machine.type.
+# Common OS/kubelet defaults live in common.patch.yaml, not duplicated here.
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+skipNodeRegistration: false
+registerWithFQDN: false
+nodeIP: {}
+labels: {}
+annotations: {}
+taints: {}
