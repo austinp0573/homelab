@@ -1,0 +1,23 @@
+# Fresh /dev/vda ONLY: capacity policy for rachael, not a universal Talos default.
+# System volumes provision first. An already-grown EPHEMERAL cannot be shrunk here.
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+provisioning:
+  diskSelector:
+    match: system_disk && disk.dev_path == '/dev/vda'
+  minSize: 100GiB
+  maxSize: 100GiB
+  grow: false
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: longhorn
+volumeType: partition
+provisioning:
+  diskSelector:
+    match: system_disk && disk.dev_path == '/dev/vda'
+  minSize: 100GiB
+  grow: true
+filesystem:
+  type: xfs
